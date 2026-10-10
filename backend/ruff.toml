@@ -1,10 +1,13 @@
 # Ruff configuration for CareNexus backend
 [lint]
 select = ["E", "F", "W", "I", "N", "UP", "B", "SIM"]
-ignore = ["E501"]
+ignore = ["E501", "B008"]
 
 [lint.isort]
 known-first-party = ["app"]
+
+[lint.per-file-ignores]
+"app/models/*.py" = ["F821"]  # SQLAlchemy string forward references
 
 [format]
 quote-style = "double"
