@@ -4,7 +4,8 @@ on:
   pull_request:
     branches: [develop, main]
   push:
-    branches: [develop]
+    branches: [develop, main]
+  workflow_dispatch:
 
 jobs:
   # ─── Backend Checks ──────────────────────────

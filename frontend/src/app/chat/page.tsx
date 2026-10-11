@@ -109,8 +109,14 @@ export default function ChatPage() {
             Care<span className="text-blue-600">Nexus</span>
           </h1>
         </Link>
-        <div className="flex items-center gap-3">
-          <span className="text-xs px-3 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded-full">
+        <div className="flex items-center gap-4">
+          <Link href="/chat" className="text-sm text-blue-600 font-medium">
+            Chat
+          </Link>
+          <Link href="/profile" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600">
+            Profile
+          </Link>
+          <span className="text-xs px-3 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded-full hidden sm:inline">
             ⚕️ Not medical advice
           </span>
           {isAuthenticated ? (
