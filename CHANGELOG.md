@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-11
+
+### Added
+- **Structured Logging**: Custom CareNexusFormatter with ANSI colors and UTC timestamps
+- **Exception Handling**: Custom error hierarchy (AuthenticationError, AuthorizationError, ResourceNotFoundError, RateLimitError) with structured JSON responses
+- **Request Middleware**: RequestLoggingMiddleware (correlation IDs, timing) and SecurityHeadersMiddleware (XSS, CSRF, clickjacking)
+- **Health Profile**: Full CRUD API for user medical data (age, gender, blood group, conditions, medications, allergies)
+- **Health Profile UI**: Frontend page with view/edit/create modes and form validation
+- **Architecture Docs**: Comprehensive system diagram and API endpoint reference table
+- **Test Suite Expansion**: 35 total tests (up from 19) covering JWT tokens, exceptions, middleware, triage
+
+### Changed
+- Version bumped to 0.2.0
+- Main app now wires middleware stack, exception handlers, and structured logging in lifespan
+- Removed stale `__future__` annotations from 12 backend modules
+
 ## [0.1.0] - 2026-10-10
 
 ### Added
