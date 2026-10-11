@@ -1,5 +1,6 @@
 """CareNexus API — AI-powered medical chatbot for primary healthcare triage."""
 
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -8,27 +9,40 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import router as api_router
 from app.core.config import settings
 from app.core.database import init_db
+from app.core.exceptions import register_exception_handlers
+from app.core.logging_config import setup_logging
+from app.core.middleware import RequestLoggingMiddleware, SecurityHeadersMiddleware
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan — runs on startup and shutdown."""
-    # Startup: initialize database tables
+    setup_logging(level="DEBUG" if settings.DEBUG else "INFO")
+    logger.info("🚀 CareNexus API starting up...")
+
+    # Initialize database tables
     await init_db()
+    logger.info("✅ Database initialized")
+
     yield
-    # Shutdown: cleanup resources if needed
+
+    logger.info("👋 CareNexus API shutting down...")
 
 
 app = FastAPI(
     title="CareNexus API",
     description="AI-powered medical chatbot for primary healthcare triage",
-    version="0.1.0",
+    version="0.2.0",
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan,
 )
 
-# CORS middleware
+# ─── Middleware Stack (order matters: last added = first executed) ───
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RequestLoggingMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS,
@@ -37,7 +51,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include API routes
+# ─── Exception Handlers ───
+register_exception_handlers(app)
+
+# ─── API Routes ───
 app.include_router(api_router, prefix="/api/v1")
 
 
@@ -46,6 +63,6 @@ async def health_check():
     """Health check endpoint for monitoring and Docker healthchecks."""
     return {
         "status": "healthy",
-        "version": "0.1.0",
+        "version": "0.2.0",
         "service": "carenexus-api",
     }
