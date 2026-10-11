@@ -131,6 +131,32 @@ class ApiClient {
   async getSessionMessages(sessionId: string) {
     return this.request(`/api/v1/chat/sessions/${sessionId}/messages`);
   }
+
+  // ─── Health Profile ──────────────────────────────
+
+  async getHealthProfile() {
+    return this.request("/api/v1/health-profile/");
+  }
+
+  async createHealthProfile(data: Record<string, unknown>) {
+    return this.request("/api/v1/health-profile/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateHealthProfile(data: Record<string, unknown>) {
+    return this.request("/api/v1/health-profile/", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteHealthProfile() {
+    return this.request("/api/v1/health-profile/", {
+      method: "DELETE",
+    });
+  }
 }
 
 export const api = new ApiClient();
