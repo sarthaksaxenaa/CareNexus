@@ -6,6 +6,7 @@ import logging
 from app.core.triage.prompts import SYSTEM_PROMPT, build_user_prompt
 from app.core.triage.red_flags import check_red_flags
 from app.models.chat import Message, TriageLevel
+from app.rag.retriever import build_rag_context
 
 logger = logging.getLogger(__name__)
 
@@ -40,10 +41,15 @@ async def _llm_analyze(
     user_message: str,
     conversation_history: list[Message] | None = None,
 ) -> dict:
-    """Generate AI response using LLM (OpenAI/Gemini)."""
+    """Generate AI response using LLM (OpenAI/Gemini) with RAG context."""
     from app.core.config import settings
 
-    # Build conversation context
+    # Step 1: Retrieve relevant medical knowledge via RAG
+    rag_context = build_rag_context(user_message, top_k=3)
+    if rag_context:
+        logger.info("RAG context injected into LLM prompt")
+
+    # Step 2: Build conversation context
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
 
     # Add conversation history for context
@@ -56,8 +62,11 @@ async def _llm_analyze(
                 }
             )
 
-    # Add current user message
-    messages.append({"role": "user", "content": build_user_prompt(user_message)})
+    # Add current user message with RAG context
+    messages.append({
+        "role": "user",
+        "content": build_user_prompt(user_message, rag_context=rag_context),
+    })
 
     if settings.LLM_PROVIDER == "openai" and settings.OPENAI_API_KEY:
         return await _call_openai(messages, settings)
@@ -148,10 +157,71 @@ def _parse_llm_response(content: str) -> dict:
 
 
 def _fallback_response(user_message: str) -> dict:
-    """Rule-based fallback when no LLM is available."""
+    """Rule-based fallback with RAG-enhanced knowledge when no LLM is available."""
+    from app.rag.retriever import retrieve
+
     message_lower = user_message.lower()
 
-    # Simple keyword-based triage
+    # Try RAG retrieval first for evidence-based response
+    rag_results = retrieve(user_message, top_k=2, threshold=0.08)
+
+    if rag_results:
+        top_match = rag_results[0]
+        condition = top_match.condition
+
+        # Determine triage level from condition severity
+        severity_map = {
+            "mild": TriageLevel.GREEN,
+            "moderate": TriageLevel.YELLOW,
+            "severe": TriageLevel.RED,
+        }
+        triage = severity_map.get(condition.severity, TriageLevel.NONE)
+
+        # Build response from retrieved knowledge
+        response_parts = [
+            f"Based on the symptoms you've described, this could be consistent with "
+            f"**{condition.name}** ({condition.category}).",
+            "",
+            f"📋 **About this condition:** {condition.description}",
+            "",
+        ]
+
+        if condition.first_aid:
+            response_parts.append(f"🩹 **Self-care guidance:** {condition.first_aid}")
+            response_parts.append("")
+
+        if condition.when_to_seek_help:
+            response_parts.append(f"🏥 **When to seek help:** {condition.when_to_seek_help}")
+            response_parts.append("")
+
+        if condition.red_flags:
+            response_parts.append(
+                "🚨 **Watch for these warning signs:** "
+                + ", ".join(condition.red_flags[:4])
+            )
+            response_parts.append("")
+
+        # Add other possible matches
+        if len(rag_results) > 1:
+            other_names = [r.condition.name for r in rag_results[1:]]
+            response_parts.append(
+                f"💡 **Other possibilities to discuss with your doctor:** "
+                f"{', '.join(other_names)}"
+            )
+            response_parts.append("")
+
+        response_parts.append(
+            "⚕️ *Disclaimer: This is not medical advice. Please consult a "
+            "healthcare professional for proper diagnosis and treatment.*"
+        )
+
+        return {
+            "response": "\n".join(response_parts),
+            "triage_level": triage,
+            "sources": f"CareNexus Knowledge Base — {condition.name} (ICD: {condition.icd_code})",
+        }
+
+    # Original keyword-based fallback when RAG finds nothing
     severe_keywords = [
         "severe",
         "unbearable",
