@@ -34,7 +34,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="CareNexus API",
     description="AI-powered medical chatbot for primary healthcare triage",
-    version="0.2.0",
+    version="0.3.0",
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan,
@@ -63,6 +63,6 @@ async def health_check():
     """Health check endpoint for monitoring and Docker healthchecks."""
     return {
         "status": "healthy",
-        "version": "0.2.0",
+        "version": "0.3.0",
         "service": "carenexus-api",
     }
