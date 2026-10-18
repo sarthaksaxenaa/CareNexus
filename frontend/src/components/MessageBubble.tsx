@@ -19,12 +19,12 @@ function renderMarkdown(text: string): string {
   let html = text
     // Bold: **text**
     .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold">$1</strong>')
-    // Italic: *text*
-    .replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>')
     // Inline code: `code`
     .replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-sm font-mono">$1</code>')
     // Links: [text](url)
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-blue-600 dark:text-blue-400 underline hover:text-blue-700" target="_blank" rel="noopener">$1</a>')
+    // Italic: *text* (after bold is already replaced)
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
     // Unordered lists: - item
     .replace(/^- (.+)$/gm, '<li class="ml-4 list-disc">$1</li>')
     // Numbered lists: 1. item
@@ -33,13 +33,13 @@ function renderMarkdown(text: string): string {
     .replace(/\n\n/g, '</p><p class="mt-2">')
     .replace(/\n/g, "<br />");
 
-  // Wrap list items in ul
+  // Wrap list items
   html = html.replace(
-    /(<li class="ml-4 list-disc">.*?<\/li>)+/gs,
+    /(<li class="ml-4 list-disc">[^]*?<\/li>)+/g,
     '<ul class="my-2 space-y-1">$&</ul>'
   );
   html = html.replace(
-    /(<li class="ml-4 list-decimal">.*?<\/li>)+/gs,
+    /(<li class="ml-4 list-decimal">[^]*?<\/li>)+/g,
     '<ol class="my-2 space-y-1">$&</ol>'
   );
 
