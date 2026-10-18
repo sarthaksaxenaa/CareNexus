@@ -30,7 +30,10 @@ async def test_health_check():
 @pytest.mark.asyncio
 async def test_register_endpoint_exists():
     """Test that the registration endpoint exists and accepts POST."""
+    from app.core.database import init_db
+
     try:
+        await init_db()  # Create tables for SQLite
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
@@ -43,18 +46,20 @@ async def test_register_endpoint_exists():
                 },
             )
 
-        # Route exists (not 404). May be 500 if DB is unavailable.
+        # Route exists (not 404). 201=created, 409=already exists, 500=db error
         assert response.status_code != 404
         assert response.status_code != 405
     except (ConnectionRefusedError, OSError):
-        # No PostgreSQL running — skip gracefully.
-        pytest.skip("PostgreSQL not available")
+        pytest.skip("Database not available")
 
 
 @pytest.mark.asyncio
 async def test_login_endpoint_exists():
     """Test that the login endpoint exists."""
+    from app.core.database import init_db
+
     try:
+        await init_db()
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
@@ -65,7 +70,7 @@ async def test_login_endpoint_exists():
 
         assert response.status_code != 404
     except (ConnectionRefusedError, OSError):
-        pytest.skip("PostgreSQL not available")
+        pytest.skip("Database not available")
 
 
 @pytest.mark.asyncio
