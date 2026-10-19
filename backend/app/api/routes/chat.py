@@ -2,11 +2,13 @@
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_current_user
 from app.core.database import get_db
+from app.core.rate_limiter import CHAT_RATE_LIMIT, get_client_ip, get_rate_limiter
+from app.core.sanitizer import sanitize_input
 from app.core.triage.engine import analyze_symptoms
 from app.models.chat import MessageRole
 from app.models.user import User
@@ -31,10 +33,24 @@ router = APIRouter()
 @router.post("/message", response_model=ChatResponse)
 async def send_message(
     request: SendMessageRequest,
+    http_request: Request,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Send a message to CareNexus AI and receive a triage response."""
+    # Rate limit check (per-IP, 10 req/min)
+    client_ip = get_client_ip(http_request)
+    get_rate_limiter().check(client_ip, CHAT_RATE_LIMIT)
+
+    # Sanitize input — strip XSS, detect prompt injection
+    sanitized = sanitize_input(request.message)
+    if not sanitized.is_valid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=sanitized.rejection_reason,
+        )
+    clean_message = sanitized.clean_text
+
     # Get or create session
     if request.session_id:
         session = await get_session(db, request.session_id, current_user.id)
@@ -45,19 +61,19 @@ async def send_message(
             )
     else:
         # Create new session with first few words as title
-        title = request.message[:50].strip() + (
-            "..." if len(request.message) > 50 else ""
+        title = clean_message[:50].strip() + (
+            "..." if len(clean_message) > 50 else ""
         )
         session = await create_session(db, current_user.id, title)
 
     # Save user message
-    user_msg = await add_message(db, session.id, MessageRole.USER, request.message)
+    user_msg = await add_message(db, session.id, MessageRole.USER, clean_message)
 
     # Get conversation history for context
     history = await get_session_messages(db, session.id)
 
     # Analyze symptoms and generate AI response
-    ai_result = await analyze_symptoms(request.message, history)
+    ai_result = await analyze_symptoms(clean_message, history)
 
     # Save assistant message
     assistant_msg = await add_message(

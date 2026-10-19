@@ -1,10 +1,11 @@
 """Authentication routes — register, login, refresh token, get current user."""
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_current_user
 from app.core.database import get_db
+from app.core.rate_limiter import AUTH_RATE_LIMIT, get_client_ip, get_rate_limiter
 from app.models.user import User
 from app.schemas.auth import (
     AuthResponse,
@@ -28,8 +29,11 @@ router = APIRouter()
 @router.post(
     "/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED
 )
-async def register(request: UserRegisterRequest, db: AsyncSession = Depends(get_db)):
+async def register(request: UserRegisterRequest, http_request: Request, db: AsyncSession = Depends(get_db)):
     """Register a new user account."""
+    # Rate limit check (per-IP, 5 req/min)
+    get_rate_limiter().check(get_client_ip(http_request), AUTH_RATE_LIMIT)
+
     # Check if email already exists
     existing_user = await get_user_by_email(db, request.email)
     if existing_user:
@@ -55,8 +59,11 @@ async def register(request: UserRegisterRequest, db: AsyncSession = Depends(get_
 
 
 @router.post("/login", response_model=AuthResponse)
-async def login(request: UserLoginRequest, db: AsyncSession = Depends(get_db)):
+async def login(request: UserLoginRequest, http_request: Request, db: AsyncSession = Depends(get_db)):
     """Authenticate user and return JWT tokens."""
+    # Rate limit check (per-IP, 5 req/min)
+    get_rate_limiter().check(get_client_ip(http_request), AUTH_RATE_LIMIT)
+
     user = await authenticate_user(db, request.email, request.password)
 
     if not user:
