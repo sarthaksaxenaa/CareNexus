@@ -21,7 +21,7 @@ async def test_health_check():
     data = response.json()
     assert data["status"] == "healthy"
     assert data["service"] == "carenexus-api"
-    assert data["version"] == "0.3.0"
+    assert data["version"] == "0.4.0"
 
 
 # ─── Route Registration ───────────────────────────────────
