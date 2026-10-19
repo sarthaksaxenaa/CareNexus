@@ -43,9 +43,9 @@ export default function AboutPage() {
 
           <Section title="Technology">
             <p className="text-gray-600 dark:text-gray-400">
-              Built with Next.js, FastAPI, LangChain, ChromaDB, and powered by
-              state-of-the-art large language models with RAG for medical
-              accuracy.
+              Built with Next.js 16, FastAPI, SQLAlchemy, and powered by
+              Google Gemini with a custom TF-IDF RAG pipeline over a curated
+              medical knowledge base for evidence-based accuracy.
             </p>
           </Section>
         </div>
