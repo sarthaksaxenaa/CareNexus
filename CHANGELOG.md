@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-19
+
+### Added — Security Wiring
+- **Rate Limiter Active**: Wired sliding window rate limiter into `/chat/message` (10 req/min) and `/auth/register` + `/auth/login` (5 req/min) — previously built but not connected
+- **Input Sanitizer Active**: Wired XSS stripping + prompt injection guard into chat message handler — all user input now sanitized before processing
+- **Shared Navbar Component**: Auth-aware, responsive navigation with active route highlighting, mobile icon fallback, and sticky blur backdrop
+
+### Added — Edge-Case Test Suite
+- **47 new tests** in `test_edge_cases.py` covering:
+  - Red flag detection: Unicode, mixed-case, negated symptoms, extremely long input
+  - Triage engine: Multi-symptom, emoji-only, greeting, malformed JSON, empty LLM responses
+  - RAG retrieval: Empty queries, nonsense, SQL injection, special characters, medical term accuracy
+  - Sanitizer: Nested HTML, zero-width chars, prompt injection variants, length boundaries
+  - Rate limiter: Independent IPs, remaining count, reset, 429 response structure
+  - API: Security headers, CORS preflight, 404/405 behavior, auth validation
+
+### Fixed
+- **API Client 204 Crash**: `api.ts` `request()` method now handles 204 No Content (DELETE responses) instead of crashing on `response.json()`
+- **About Page Tech Stack**: Replaced inaccurate "LangChain, ChromaDB" with actual "TF-IDF RAG, FastAPI, SQLAlchemy"
+- **Home Page Features**: Replaced "Multilingual" card (not yet built) with "RAG Pipeline" (actually built)
+- **Duplicate Headers**: Replaced copy-pasted headers in Dashboard, Profile, and About with shared Navbar
+
+### Changed
+- **Test Count**: 110 → 152 tests passing (9 test files)
+- **Version**: 0.3.0 → 0.4.0 in main.py, config.py, health check, README
+- **Layout**: Added `scroll-smooth` and `antialiased` to root HTML layout
+
 ## [0.3.0] - 2026-10-19
 
 ### Added — RAG Pipeline
