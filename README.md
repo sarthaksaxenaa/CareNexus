@@ -6,7 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.12+](https://img.shields.io/badge/Python-3.12%2B-blue.svg)](https://python.org)
 [![Next.js 16](https://img.shields.io/badge/Next.js-16-black.svg)](https://nextjs.org)
-[![Tests](https://img.shields.io/badge/Tests-110%20passing-green.svg)](#testing)
+[![Tests](https://img.shields.io/badge/Tests-152%20passing-green.svg)](#testing)
 
 ---
 
@@ -27,12 +27,13 @@
 - **Quick Actions** — Pre-built symptom prompts for instant triage
 
 ### Engineering
-- **110 Tests** — Unit, integration, and security tests passing in <5s
-- **Security Hardening** — Rate limiting, input sanitization, prompt injection guard
+- **152 Tests** — Unit, integration, edge-case, and security tests passing in <25s
+- **Security Hardening** — Rate limiting + input sanitization wired into all routes
 - **Structured Logging** — Color-coded, timestamped logs with request tracing
 - **Custom Exceptions** — Typed error hierarchy with global handlers
 - **CI/CD** — GitHub Actions pipeline (lint, type-check, test, build)
 - **Database Agnostic** — SQLite (dev) + PostgreSQL (prod) via SQLAlchemy 2.0
+- **Shared Navbar** — Auth-aware, responsive, active-state navigation across all pages
 
 ---
 
@@ -126,7 +127,7 @@ npm run dev
 cd backend
 python -m pytest tests/ -v
 
-# 110 tests across 8 test files:
+# 152 tests across 9 test files:
 #   test_auth_service.py    —  7 tests (JWT tokens)
 #   test_exceptions.py      —  5 tests (error handlers)
 #   test_health.py          — 37 tests (endpoints + auth)
@@ -135,6 +136,7 @@ python -m pytest tests/ -v
 #   test_rag.py             — 32 tests (knowledge base + vectorizer + retriever)
 #   test_llm_service.py     — 16 tests (retry + JSON parsing + providers)
 #   test_security.py        — 27 tests (rate limiter + sanitizer + injection)
+#   test_edge_cases.py      — 47 tests (adversarial inputs, boundary values, API validation)
 ```
 
 ---
@@ -198,20 +200,20 @@ Each condition includes: symptoms, severity, red flags, first aid, when to seek 
 CareNexus/
 ├── backend/
 │   ├── app/
-│   │   ├── api/routes/          # REST endpoints
+│   │   ├── api/routes/          # REST endpoints (auth, chat, health-profile, analytics)
 │   │   ├── core/                # Config, middleware, security, triage
 │   │   │   └── triage/          # Triage engine, prompts, red flags
 │   │   ├── models/              # SQLAlchemy ORM models
 │   │   ├── rag/                 # RAG pipeline
-│   │   │   ├── knowledge_base.py
-│   │   │   ├── vectorizer.py
-│   │   │   └── retriever.py
+│   │   │   ├── knowledge_base.py   # 20+ curated medical conditions
+│   │   │   ├── vectorizer.py       # TF-IDF with cosine similarity
+│   │   │   └── retriever.py        # Context builder for LLM prompts
 │   │   ├── schemas/             # Pydantic request/response schemas
 │   │   └── services/            # Business logic services
-│   └── tests/                   # 110 tests
+│   └── tests/                   # 152 tests (9 test files)
 ├── frontend/
-│   ├── src/app/                 # Next.js pages
-│   ├── src/components/          # Reusable React components
+│   ├── src/app/                 # Next.js pages (chat, dashboard, profile, about, auth)
+│   ├── src/components/          # Navbar, ChatSidebar, MessageBubble, QuickActions, ErrorBoundary
 │   └── src/lib/                 # API client
 ├── docs/                        # Architecture documentation
 ├── .github/workflows/           # CI/CD pipeline
@@ -247,12 +249,18 @@ CareNexus is an **educational project** demonstrating AI-powered healthcare tria
 
 ---
 
-<!-- CHECKPOINT: v0.3.0 release ready. 6 feature branches merged to develop.
-110 tests passing. All features complete:
-- Branch 1: RAG knowledge base (20 conditions, TF-IDF vectorizer, retriever)
-- Branch 2: Gemini integration (LLM service, retry, config)
-- Branch 3: Enhanced chat UX (sidebar, markdown, quick actions, error boundary)
-- Branch 4: Security (rate limiter, sanitizer, prompt injection guard)
-- Branch 5: Analytics dashboard (API + frontend charts)
-- Branch 6: Release (docs, changelog, version bump)
-Next: PR develop -> main, tag v0.3.0 -->
+<!-- CHECKPOINT: v0.4.0 — Security Hardening & Testing. 2026-10-19.
+152 tests passing (was 110). All security modules now WIRED into routes.
+Completed in v0.4.0:
+- Fixed api.ts 204 No Content crash (DELETE endpoint)
+- Fixed about page incorrect tech stack (LangChain/ChromaDB → TF-IDF/FastAPI)
+- Wired rate limiter into chat (10 req/min) and auth (5 req/min) routes
+- Wired input sanitizer (XSS + prompt injection) into chat message handler
+- Added 47 senior-level edge-case tests (red flags, triage, RAG, sanitizer, rate limiter, API)
+- Added shared Navbar component (auth-aware, responsive, active states)
+- Replaced duplicate headers in dashboard, profile, about pages with Navbar
+- Updated home page feature cards to reflect actual tech (RAG Pipeline not Multilingual)
+- Version bumped: 0.3.0 → 0.4.0
+
+Previous checkpoints: v0.0.1 (scaffolding), v0.1.0 (auth/chat), v0.2.0 (middleware/health), v0.3.0 (RAG/Gemini/UX/security/analytics)
+Next: merge to main, tag v0.4.0, push to GitHub -->
