@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import Navbar from "@/components/Navbar";
 
 interface HealthProfile {
   id: string;
@@ -102,18 +103,7 @@ export default function ProfilePage() {
 
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-gray-950">
-      <header className="flex items-center justify-between px-6 py-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="text-2xl">🏥</span>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-            Care<span className="text-blue-600">Nexus</span>
-          </h1>
-        </Link>
-        <nav className="flex items-center gap-4">
-          <Link href="/chat" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600">Chat</Link>
-          <Link href="/profile" className="text-sm text-blue-600 font-medium">Profile</Link>
-        </nav>
-      </header>
+      <Navbar />
 
       <div className="max-w-2xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
