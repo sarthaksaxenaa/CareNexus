@@ -249,20 +249,21 @@ CareNexus is an **educational project** demonstrating AI-powered healthcare tria
 
 ---
 
-<!-- CHECKPOINT: v0.5.0 — E2E Integration Tests. 2026-10-21.
-205 tests passing (was 152). Added comprehensive E2E integration tests.
-Completed in v0.5.0:
-- Created conftest.py with shared test fixtures (in-memory SQLite, auth client, rate limiter reset)
-- Added 48 E2E integration tests across 7 test classes:
-  - TestAuthFlow (12): register, login, /me, validation errors, duplicate registration
-  - TestChatFlow (9): symptom triage, session continuity, red flags, history retrieval
-  - TestHealthProfileCRUD (12): full create/read/update/delete lifecycle, validation
-  - TestSecurity (7): prompt injection, XSS, rate limits, SQL injection
-  - TestCrossUserIsolation (3): session/profile data isolation between users
-  - TestFullPipeline (1): complete user journey smoke test (12-step)
-  - TestMiddleware (4): security headers, request ID, CORS
-- Version bumped: 0.4.0 -> 0.5.0
-- Frontend builds clean (8 routes)
+<!-- CHECKPOINT: v0.5.1 — Full Codebase Refinement. 2026-10-21.
+205 tests passing, 12 warnings (was 194). Frontend 9 routes clean build.
+Completed in v0.5.1:
+- Replaced deprecated datetime.utcnow() with datetime.now(UTC) in all 3 model files (eliminated 180+ warnings)
+- Created AuthLayout.tsx shared component (eliminated ~60 duplicated lines between login/register)
+- Created styles.ts with shared INPUT_CLASS/LABEL_CLASS/BTN_PRIMARY (replaced 11 copy-pasted class strings)
+- Removed 'use client' from home + about pages (enables SSR/static generation)
+- Hoisted TRIAGE_COLORS, BLOOD_GROUPS, GENDERS, PROFILE_FIELDS to module scope (no re-creation per render)
+- Hoisted maxMsgs computation outside .map() loop in dashboard
+- Extracted generic handleChange() in profile page (replaced 6 inline setForm calls)
+- Removed dead Link import from profile page
+- Fixed .replace() ? .replaceAll() for multi-underscore category names
+- Added aria-label to Navbar, loading spinners, error/success alerts
+- Removed all default Next.js branding (favicon, SVGs, dev indicator)
+- Added CareNexus dynamic favicon (icon.tsx)
 
-Previous checkpoints: v0.0.1 (scaffolding), v0.1.0 (auth/chat), v0.2.0 (middleware/health), v0.3.0 (RAG/Gemini/UX/security/analytics), v0.4.0 (security wiring/edge-cases/Navbar)
-Next: frontend tests, deployment prep, more knowledge base conditions -->
+Previous checkpoints: v0.0.1 (scaffolding), v0.1.0 (auth/chat), v0.2.0 (middleware/health), v0.3.0 (RAG/Gemini/UX/security/analytics), v0.4.0 (security wiring/edge-cases/Navbar), v0.5.0 (E2E tests)
+Next: frontend component tests, deployment prep, expand knowledge base -->
