@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import Navbar from "@/components/Navbar";
+
+// ─── Types ───────────────────────────────────────────────────────────────────
 
 interface TriageData {
   distribution: Record<string, number>;
@@ -33,6 +34,17 @@ interface RagStats {
   categories: string[];
 }
 
+// ─── Constants (outside component — no re-creation per render) ───────────────
+
+const TRIAGE_COLORS: Record<string, { bg: string; label: string; emoji: string }> = {
+  green: { bg: "bg-green-500", label: "Self-care", emoji: "🟢" },
+  yellow: { bg: "bg-yellow-500", label: "See Doctor", emoji: "🟡" },
+  red: { bg: "bg-red-500", label: "Emergency", emoji: "🔴" },
+  none: { bg: "bg-gray-400", label: "Other", emoji: "⚪" },
+};
+
+// ─── Component ───────────────────────────────────────────────────────────────
+
 export default function DashboardPage() {
   const router = useRouter();
   const [overview, setOverview] = useState<OverviewStats | null>(null);
@@ -47,43 +59,41 @@ export default function DashboardPage() {
       router.push("/login");
       return;
     }
+
+    const loadDashboard = async () => {
+      try {
+        const [overviewRes, triageRes, dailyRes, ragRes] = await Promise.allSettled([
+          api.request<{ data: OverviewStats }>("/api/v1/analytics/overview"),
+          api.request<{ data: TriageData }>("/api/v1/analytics/triage-distribution"),
+          api.request<{ data: DailyUsage[] }>("/api/v1/analytics/daily-usage?days=7"),
+          api.request<{ data: RagStats }>("/api/v1/analytics/rag-index"),
+        ]);
+
+        if (overviewRes.status === "fulfilled") setOverview(overviewRes.value.data);
+        if (triageRes.status === "fulfilled") setTriage(triageRes.value.data);
+        if (dailyRes.status === "fulfilled") setDaily(dailyRes.value.data);
+        if (ragRes.status === "fulfilled") setRag(ragRes.value.data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load dashboard");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     loadDashboard();
-  }, [router]);
-
-  const loadDashboard = async () => {
-    try {
-      const [overviewRes, triageRes, dailyRes, ragRes] = await Promise.allSettled([
-        api.request<{ data: OverviewStats }>("/api/v1/analytics/overview"),
-        api.request<{ data: TriageData }>("/api/v1/analytics/triage-distribution"),
-        api.request<{ data: DailyUsage[] }>("/api/v1/analytics/daily-usage?days=7"),
-        api.request<{ data: RagStats }>("/api/v1/analytics/rag-index"),
-      ]);
-
-      if (overviewRes.status === "fulfilled") setOverview(overviewRes.value.data);
-      if (triageRes.status === "fulfilled") setTriage(triageRes.value.data);
-      if (dailyRes.status === "fulfilled") setDaily(dailyRes.value.data);
-      if (ragRes.status === "fulfilled") setRag(ragRes.value.data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load dashboard");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const TRIAGE_COLORS = {
-    green: { bg: "bg-green-500", label: "Self-care", emoji: "🟢" },
-    yellow: { bg: "bg-yellow-500", label: "See Doctor", emoji: "🟡" },
-    red: { bg: "bg-red-500", label: "Emergency", emoji: "🔴" },
-    none: { bg: "bg-gray-400", label: "Other", emoji: "⚪" },
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-950">
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-950" role="status" aria-label="Loading dashboard">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
       </div>
     );
   }
+
+  // Hoist maxMsgs outside the loop (was recalculated on every iteration)
+  const maxMsgs = daily.length > 0 ? Math.max(...daily.map((d) => d.messages), 1) : 1;
 
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-gray-950">
@@ -93,16 +103,16 @@ export default function DashboardPage() {
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">📊 Analytics Dashboard</h2>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl text-sm">{error}</div>
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl text-sm" role="alert">{error}</div>
         )}
 
         {/* Overview Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {[
-            { label: "Total Sessions", value: overview?.total_sessions ?? 0, icon: "💬", color: "blue" },
-            { label: "Total Messages", value: overview?.total_messages ?? 0, icon: "📨", color: "green" },
-            { label: "Avg / Session", value: overview?.avg_messages_per_session ?? 0, icon: "📊", color: "purple" },
-            { label: "Emergency Flags", value: overview?.emergency_triage_count ?? 0, icon: "🚨", color: "red" },
+            { label: "Total Sessions", value: overview?.total_sessions ?? 0, icon: "💬" },
+            { label: "Total Messages", value: overview?.total_messages ?? 0, icon: "📨" },
+            { label: "Avg / Session", value: overview?.avg_messages_per_session ?? 0, icon: "📊" },
+            { label: "Emergency Flags", value: overview?.emergency_triage_count ?? 0, icon: "🚨" },
           ].map((card) => (
             <div key={card.label} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-5 border border-gray-200 dark:border-gray-700">
               <div className="flex items-center gap-2 mb-2">
@@ -152,23 +162,19 @@ export default function DashboardPage() {
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">7-Day Activity</h3>
             {daily.length > 0 ? (
               <div className="space-y-2">
-                {daily.map((day) => {
-                  const maxMsgs = Math.max(...daily.map(d => d.messages), 1);
-                  const barWidth = (day.messages / maxMsgs) * 100;
-                  return (
-                    <div key={day.date} className="flex items-center gap-3 text-sm">
-                      <span className="w-20 text-gray-500 dark:text-gray-400 text-xs font-mono">
-                        {new Date(day.date + "T00:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
-                      </span>
-                      <div className="flex-1 h-4 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                        <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${barWidth}%` }} />
-                      </div>
-                      <span className="w-12 text-right text-gray-600 dark:text-gray-400 text-xs font-medium">
-                        {day.messages} msg
-                      </span>
+                {daily.map((day) => (
+                  <div key={day.date} className="flex items-center gap-3 text-sm">
+                    <span className="w-20 text-gray-500 dark:text-gray-400 text-xs font-mono">
+                      {new Date(day.date + "T00:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+                    </span>
+                    <div className="flex-1 h-4 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${(day.messages / maxMsgs) * 100}%` }} />
                     </div>
-                  );
-                })}
+                    <span className="w-12 text-right text-gray-600 dark:text-gray-400 text-xs font-medium">
+                      {day.messages} msg
+                    </span>
+                  </div>
+                ))}
               </div>
             ) : (
               <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-8">
@@ -199,7 +205,7 @@ export default function DashboardPage() {
             <div className="mt-4 flex flex-wrap gap-2">
               {rag.categories.map((cat) => (
                 <span key={cat} className="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full capitalize">
-                  {cat.replace("_", " ")}
+                  {cat.replaceAll("_", " ")}
                 </span>
               ))}
             </div>
