@@ -6,7 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.12+](https://img.shields.io/badge/Python-3.12%2B-blue.svg)](https://python.org)
 [![Next.js 16](https://img.shields.io/badge/Next.js-16-black.svg)](https://nextjs.org)
-[![Tests](https://img.shields.io/badge/Tests-152%20passing-green.svg)](#testing)
+[![Tests](https://img.shields.io/badge/Tests-205%20passing-green.svg)](#testing)
 
 ---
 
@@ -27,7 +27,7 @@
 - **Quick Actions** — Pre-built symptom prompts for instant triage
 
 ### Engineering
-- **152 Tests** — Unit, integration, edge-case, and security tests passing in <25s
+- **205 Tests** — Unit, integration, E2E, edge-case, and security tests passing in <15s
 - **Security Hardening** — Rate limiting + input sanitization wired into all routes
 - **Structured Logging** — Color-coded, timestamped logs with request tracing
 - **Custom Exceptions** — Typed error hierarchy with global handlers
@@ -127,7 +127,7 @@ npm run dev
 cd backend
 python -m pytest tests/ -v
 
-# 152 tests across 9 test files:
+# 205 tests across 11 test files:
 #   test_auth_service.py    —  7 tests (JWT tokens)
 #   test_exceptions.py      —  5 tests (error handlers)
 #   test_health.py          — 37 tests (endpoints + auth)
@@ -249,18 +249,20 @@ CareNexus is an **educational project** demonstrating AI-powered healthcare tria
 
 ---
 
-<!-- CHECKPOINT: v0.4.0 — Security Hardening & Testing. 2026-10-19.
-152 tests passing (was 110). All security modules now WIRED into routes.
-Completed in v0.4.0:
-- Fixed api.ts 204 No Content crash (DELETE endpoint)
-- Fixed about page incorrect tech stack (LangChain/ChromaDB → TF-IDF/FastAPI)
-- Wired rate limiter into chat (10 req/min) and auth (5 req/min) routes
-- Wired input sanitizer (XSS + prompt injection) into chat message handler
-- Added 47 senior-level edge-case tests (red flags, triage, RAG, sanitizer, rate limiter, API)
-- Added shared Navbar component (auth-aware, responsive, active states)
-- Replaced duplicate headers in dashboard, profile, about pages with Navbar
-- Updated home page feature cards to reflect actual tech (RAG Pipeline not Multilingual)
-- Version bumped: 0.3.0 → 0.4.0
+<!-- CHECKPOINT: v0.5.0 � E2E Integration Tests. 2026-10-21.
+205 tests passing (was 152). Added comprehensive E2E integration tests.
+Completed in v0.5.0:
+- Created conftest.py with shared test fixtures (in-memory SQLite, auth client, rate limiter reset)
+- Added 48 E2E integration tests across 7 test classes:
+  - TestAuthFlow (12): register, login, /me, validation errors, duplicate registration
+  - TestChatFlow (9): symptom triage, session continuity, red flags, history retrieval
+  - TestHealthProfileCRUD (12): full create/read/update/delete lifecycle, validation
+  - TestSecurity (7): prompt injection, XSS, rate limits, SQL injection
+  - TestCrossUserIsolation (3): session/profile data isolation between users
+  - TestFullPipeline (1): complete user journey smoke test (12-step)
+  - TestMiddleware (4): security headers, request ID, CORS
+- Version bumped: 0.4.0 -> 0.5.0
+- Frontend builds clean (8 routes)
 
-Previous checkpoints: v0.0.1 (scaffolding), v0.1.0 (auth/chat), v0.2.0 (middleware/health), v0.3.0 (RAG/Gemini/UX/security/analytics)
-Next: merge to main, tag v0.4.0, push to GitHub -->
+Previous checkpoints: v0.0.1 (scaffolding), v0.1.0 (auth/chat), v0.2.0 (middleware/health), v0.3.0 (RAG/Gemini/UX/security/analytics), v0.4.0 (security wiring/edge-cases/Navbar)
+Next: frontend tests, deployment prep, more knowledge base conditions -->
