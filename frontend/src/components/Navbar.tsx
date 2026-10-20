@@ -39,7 +39,7 @@ export default function Navbar() {
   if (["/login", "/register"].includes(pathname)) return null;
 
   return (
-    <nav className="sticky top-0 z-50 flex items-center justify-between px-6 py-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
+    <nav aria-label="Main navigation" className="sticky top-0 z-50 flex items-center justify-between px-6 py-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
       {/* Logo */}
       <Link href="/" className="flex items-center gap-2 group">
         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center text-white text-sm shadow-sm group-hover:shadow-md transition-shadow">
