@@ -689,7 +689,7 @@ GENERAL_CONDITIONS: tuple[MedicalCondition, ...] = (
 # UNIFIED KNOWLEDGE BASE
 # ═══════════════════════════════════════════════════════════════════════════════
 
-ALL_CONDITIONS: tuple[MedicalCondition, ...] = (
+_CORE_CONDITIONS: tuple[MedicalCondition, ...] = (
     *RESPIRATORY_CONDITIONS,
     *CARDIOVASCULAR_CONDITIONS,
     *GASTROINTESTINAL_CONDITIONS,
@@ -699,6 +699,13 @@ ALL_CONDITIONS: tuple[MedicalCondition, ...] = (
     *MENTAL_HEALTH_CONDITIONS,
     *GENERAL_CONDITIONS,
 )
+
+# Merge extended knowledge base for wider coverage
+try:
+    from app.rag.knowledge_base_extended import ALL_EXTENDED_CONDITIONS
+    ALL_CONDITIONS: tuple[MedicalCondition, ...] = (*_CORE_CONDITIONS, *ALL_EXTENDED_CONDITIONS)
+except ImportError:
+    ALL_CONDITIONS: tuple[MedicalCondition, ...] = _CORE_CONDITIONS  # type: ignore[no-redef]
 
 # Category index for fast lookups
 CONDITIONS_BY_CATEGORY: dict[str, list[MedicalCondition]] = {}
