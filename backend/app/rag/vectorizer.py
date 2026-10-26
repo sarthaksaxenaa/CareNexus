@@ -22,6 +22,7 @@ from collections import Counter
 from dataclasses import dataclass, field
 
 from app.rag.knowledge_base import ALL_CONDITIONS, MedicalCondition
+from app.rag.synonyms import expand_synonyms
 
 
 # ─── Stop Words (medical-context-aware) ─────────────────────────────────────
@@ -158,8 +159,9 @@ class MedicalVectorizer:
         ]
 
     def _query_to_vector(self, query: str) -> dict[str, float]:
-        """Convert a query string to a TF-IDF vector."""
+        """Convert a query string to a TF-IDF vector with synonym expansion."""
         tokens = self._tokenize(query)
+        tokens = expand_synonyms(tokens, query.lower())
         term_counts = Counter(tokens)
         max_count = max(term_counts.values()) if term_counts else 1
 
