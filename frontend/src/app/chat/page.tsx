@@ -120,8 +120,7 @@ export default function ChatPage() {
     setSessionId(selectedSessionId);
     setShowQuickActions(false);
     try {
-      const data = await api.getSessionMessages(selectedSessionId);
-      const msgs = data as ChatMessage[];
+      const msgs = await api.getSessionMessages(selectedSessionId);
       if (msgs.length > 0) {
         setMessages(msgs);
       }
