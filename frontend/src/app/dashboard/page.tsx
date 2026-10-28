@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import Navbar from "@/components/Navbar";
+import { ALERT_ERROR, CARD } from "@/lib/styles";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -37,10 +38,10 @@ interface RagStats {
 // ─── Constants (outside component — no re-creation per render) ───────────────
 
 const TRIAGE_COLORS: Record<string, { bg: string; label: string; emoji: string }> = {
-  green: { bg: "bg-green-500", label: "Self-care", emoji: "🟢" },
-  yellow: { bg: "bg-yellow-500", label: "See Doctor", emoji: "🟡" },
-  red: { bg: "bg-red-500", label: "Emergency", emoji: "🔴" },
-  none: { bg: "bg-gray-400", label: "Other", emoji: "⚪" },
+  green: { bg: "bg-triage-green", label: "Self-care", emoji: "🟢" },
+  yellow: { bg: "bg-triage-amber", label: "See Doctor", emoji: "🟡" },
+  red: { bg: "bg-triage-red", label: "Emergency", emoji: "🔴" },
+  none: { bg: "bg-ink-4", label: "Other", emoji: "⚪" },
 };
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -86,8 +87,8 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-950" role="status" aria-label="Loading dashboard">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+      <div className="flex items-center justify-center min-h-screen bg-void" role="status" aria-label="Loading dashboard">
+        <div className="animate-spin rounded-full h-12 w-12 border-2 border-edge border-b-amethyst-300" />
       </div>
     );
   }
@@ -96,14 +97,14 @@ export default function DashboardPage() {
   const maxMsgs = daily.length > 0 ? Math.max(...daily.map((d) => d.messages), 1) : 1;
 
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <main className="min-h-screen bg-void">
       <Navbar />
 
       <div className="max-w-6xl mx-auto px-4 py-8">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">📊 Analytics Dashboard</h2>
+        <h2 className="text-2xl font-bold tracking-tight text-ink mb-6">📊 Analytics Dashboard</h2>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl text-sm" role="alert">{error}</div>
+          <div className={`mb-6 ${ALERT_ERROR}`} role="alert">{error}</div>
         )}
 
         {/* Overview Cards */}
@@ -114,20 +115,20 @@ export default function DashboardPage() {
             { label: "Avg / Session", value: overview?.avg_messages_per_session ?? 0, icon: "📊" },
             { label: "Emergency Flags", value: overview?.emergency_triage_count ?? 0, icon: "🚨" },
           ].map((card) => (
-            <div key={card.label} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-5 border border-gray-200 dark:border-gray-700">
+            <div key={card.label} className={`${CARD} p-5 transition-all duration-300 hover:border-amethyst-600/70 hover:shadow-amethyst/20 hover:-translate-y-0.5`}>
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-xl">{card.icon}</span>
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">{card.label}</p>
+                <p className="text-xs text-ink-4 font-medium uppercase tracking-wider">{card.label}</p>
               </div>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white">{card.value}</p>
+              <p className="text-3xl font-bold text-ink">{card.value}</p>
             </div>
           ))}
         </div>
 
         <div className="grid md:grid-cols-2 gap-6 mb-8">
           {/* Triage Distribution */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Triage Distribution</h3>
+          <div className={`${CARD} p-6`}>
+            <h3 className="text-lg font-semibold text-ink mb-4">Triage Distribution</h3>
             {triage && triage.total_triaged > 0 ? (
               <div className="space-y-3">
                 {Object.entries(TRIAGE_COLORS).map(([level, config]) => {
@@ -136,14 +137,14 @@ export default function DashboardPage() {
                   return (
                     <div key={level} className="space-y-1">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-700 dark:text-gray-300">
+                        <span className="text-ink-3">
                           {config.emoji} {config.label}
                         </span>
-                        <span className="text-gray-500 dark:text-gray-400 font-medium">
+                        <span className="text-ink-4 font-medium">
                           {count} ({pct}%)
                         </span>
                       </div>
-                      <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div className="h-2 bg-abyss border border-edge-soft rounded-full overflow-hidden">
                         <div className={`h-full ${config.bg} rounded-full transition-all duration-500`} style={{ width: `${pct}%` }} />
                       </div>
                     </div>
@@ -151,33 +152,33 @@ export default function DashboardPage() {
                 })}
               </div>
             ) : (
-              <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-8">
+              <p className="text-sm text-ink-4 text-center py-8">
                 No triage data yet. Start a health check to see statistics!
               </p>
             )}
           </div>
 
           {/* Daily Usage */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">7-Day Activity</h3>
+          <div className={`${CARD} p-6`}>
+            <h3 className="text-lg font-semibold text-ink mb-4">7-Day Activity</h3>
             {daily.length > 0 ? (
               <div className="space-y-2">
                 {daily.map((day) => (
                   <div key={day.date} className="flex items-center gap-3 text-sm">
-                    <span className="w-20 text-gray-500 dark:text-gray-400 text-xs font-mono">
+                    <span className="w-20 text-ink-4 text-xs font-mono">
                       {new Date(day.date + "T00:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
                     </span>
-                    <div className="flex-1 h-4 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                      <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${(day.messages / maxMsgs) * 100}%` }} />
+                    <div className="flex-1 h-4 bg-abyss border border-edge-soft rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-amethyst to-amethyst-400 rounded-full transition-all duration-500" style={{ width: `${(day.messages / maxMsgs) * 100}%` }} />
                     </div>
-                    <span className="w-12 text-right text-gray-600 dark:text-gray-400 text-xs font-medium">
+                    <span className="w-12 text-right text-ink-3 text-xs font-medium">
                       {day.messages} msg
                     </span>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-8">
+              <p className="text-sm text-ink-4 text-center py-8">
                 No activity data yet.
               </p>
             )}
@@ -186,25 +187,25 @@ export default function DashboardPage() {
 
         {/* RAG Knowledge Base Stats */}
         {rag && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">🧠 Knowledge Base</h3>
+          <div className={`${CARD} p-6`}>
+            <h3 className="text-lg font-semibold text-ink mb-4">🧠 Knowledge Base</h3>
             <div className="grid grid-cols-3 gap-4">
               <div className="text-center">
-                <p className="text-2xl font-bold text-blue-600">{rag.indexed_conditions}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Medical Conditions</p>
+                <p className="text-2xl font-bold text-amethyst-300">{rag.indexed_conditions}</p>
+                <p className="text-xs text-ink-4 mt-1">Medical Conditions</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-green-600">{rag.vocabulary_size}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Vocabulary Terms</p>
+                <p className="text-2xl font-bold text-amethyst-200">{rag.vocabulary_size}</p>
+                <p className="text-xs text-ink-4 mt-1">Vocabulary Terms</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-purple-600">{rag.categories.length}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Categories</p>
+                <p className="text-2xl font-bold text-ink">{rag.categories.length}</p>
+                <p className="text-xs text-ink-4 mt-1">Categories</p>
               </div>
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
               {rag.categories.map((cat) => (
-                <span key={cat} className="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full capitalize">
+                <span key={cat} className="px-3 py-1 text-xs bg-amethyst/20 text-amethyst-200 border border-amethyst-600/40 rounded-full capitalize">
                   {cat.replaceAll("_", " ")}
                 </span>
               ))}

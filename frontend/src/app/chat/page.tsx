@@ -8,6 +8,7 @@ import ChatSidebar from "@/components/ChatSidebar";
 import MessageBubble from "@/components/MessageBubble";
 import QuickActions from "@/components/QuickActions";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { ALERT_ADVISORY } from "@/lib/styles";
 
 export default function ChatPage() {
   const router = useRouter();
@@ -131,7 +132,7 @@ export default function ChatPage() {
 
   return (
     <ErrorBoundary>
-      <div className="flex h-screen bg-gray-50 dark:bg-gray-950">
+      <div className="flex h-screen bg-void">
         {/* Sidebar */}
         <ChatSidebar
           currentSessionId={sessionId}
@@ -142,31 +143,31 @@ export default function ChatPage() {
         {/* Main chat area */}
         <div className="flex flex-col flex-1 min-w-0">
           {/* Header */}
-          <header className="flex items-center justify-between px-6 py-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+          <header className="flex items-center justify-between px-6 py-3 bg-surface/80 backdrop-blur-xl border-b border-edge">
             <div className="flex items-center gap-3">
               <div className="lg:hidden w-8" /> {/* Spacer for sidebar toggle */}
               <div>
-                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
+                <h2 className="text-sm font-semibold text-ink">
                   Health Check
                 </h2>
-                <p className="text-xs text-gray-400 dark:text-gray-500">
+                <p className="text-xs text-ink-4">
                   {sessionId ? `Session active` : "New conversation"}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-xs px-3 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded-full hidden sm:inline">
+              <span className={`${ALERT_ADVISORY} hidden sm:inline`}>
                 ⚕️ Not medical advice
               </span>
               {isAuthenticated ? (
                 <button
                   onClick={() => { api.logout(); setIsAuthenticated(false); router.push("/"); }}
-                  className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  className="text-xs text-ink-4 hover:text-triage-red px-3 py-1.5 rounded-lg hover:bg-triage-red/10 transition-colors duration-200"
                 >
                   Logout
                 </button>
               ) : (
-                <a href="/login" className="text-xs text-blue-600 hover:text-blue-700 font-medium px-3 py-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
+                <a href="/login" className="text-xs text-amethyst-300 hover:text-amethyst-200 font-medium px-3 py-1.5 rounded-lg hover:bg-amethyst/20 transition-colors duration-200">
                   Login
                 </a>
               )}
@@ -187,11 +188,11 @@ export default function ChatPage() {
             ))}
             {isLoading && (
               <div className="flex justify-start">
-                <div className="px-4 py-3 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-bl-md">
+                <div className="px-4 py-3 rounded-2xl bg-surface border border-edge-soft shadow-lg shadow-black/40 rounded-bl-md">
                   <div className="flex gap-1.5">
-                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                    <div className="w-2 h-2 bg-amethyst-300 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                    <div className="w-2 h-2 bg-amethyst-300 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                    <div className="w-2 h-2 bg-amethyst-300 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
                   </div>
                 </div>
               </div>
@@ -205,7 +206,7 @@ export default function ChatPage() {
           )}
 
           {/* Input */}
-          <div className="px-4 py-3 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
+          <div className="px-4 py-3 bg-surface/80 backdrop-blur-xl border-t border-edge">
             <div className="flex gap-3 max-w-4xl mx-auto">
               <input
                 ref={inputRef}
@@ -215,12 +216,12 @@ export default function ChatPage() {
                 onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
                 placeholder={isAuthenticated ? "Describe your symptoms..." : "Login to get AI analysis..."}
                 disabled={isLoading}
-                className="flex-1 px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 text-sm"
+                className="flex-1 px-4 py-3 rounded-xl bg-abyss border border-edge text-ink placeholder:text-ink-4/60 focus:outline-none focus:border-amethyst-400 focus:ring-2 focus:ring-amethyst-400/40 disabled:opacity-50 transition-colors duration-200 text-sm"
               />
               <button
                 onClick={() => handleSend()}
                 disabled={isLoading || !input.trim()}
-                className="px-5 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                className="px-5 py-3 rounded-xl font-medium text-white bg-gradient-to-r from-amethyst to-amethyst-500 shadow-lg shadow-amethyst/30 hover:from-amethyst-600 hover:to-amethyst-400 active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
                 {isLoading ? (
                   <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">

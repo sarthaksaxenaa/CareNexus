@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
-import { INPUT_CLASS, LABEL_CLASS } from "@/lib/styles";
+import { INPUT_CLASS, LABEL_CLASS, BTN_PRIMARY, BTN_SECONDARY, BTN_PRIMARY_SM, ALERT_ERROR, ALERT_SUCCESS, CARD } from "@/lib/styles";
 import Navbar from "@/components/Navbar";
 
 interface HealthProfile {
@@ -113,23 +113,23 @@ export default function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen" role="status" aria-label="Loading profile">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+      <div className="flex items-center justify-center min-h-screen bg-void" role="status" aria-label="Loading profile">
+        <div className="animate-spin rounded-full h-12 w-12 border-2 border-edge border-b-amethyst-300" />
       </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <main className="min-h-screen bg-void">
       <Navbar />
 
       <div className="max-w-2xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">🩺 Health Profile</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-ink">🩺 Health Profile</h2>
           {profile && !isEditing && (
             <button
               onClick={() => setIsEditing(true)}
-              className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className={BTN_PRIMARY_SM}
             >
               Edit Profile
             </button>
@@ -137,26 +137,26 @@ export default function ProfilePage() {
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg text-sm" role="alert">{error}</div>
+          <div className={`mb-4 ${ALERT_ERROR}`} role="alert">{error}</div>
         )}
         {success && (
-          <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-lg text-sm" role="status">{success}</div>
+          <div className={`mb-4 ${ALERT_SUCCESS}`} role="status">{success}</div>
         )}
 
         {!isEditing && profile ? (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 space-y-4">
+          <div className={`${CARD} p-6 space-y-4`}>
             {PROFILE_FIELDS.map((item) => (
-              <div key={item.key} className="flex items-start gap-3 py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
+              <div key={item.key} className="flex items-start gap-3 py-2 border-b border-edge-soft last:border-0">
                 <span className="text-xl">{item.icon}</span>
                 <div>
-                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{item.label}</p>
-                  <p className="text-gray-900 dark:text-white">{profile[item.key] || "Not provided"}</p>
+                  <p className="text-xs font-medium text-ink-4 uppercase tracking-wider">{item.label}</p>
+                  <p className="text-ink">{profile[item.key] || "Not provided"}</p>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 space-y-5">
+          <form onSubmit={handleSubmit} className={`${CARD} p-6 space-y-5`}>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className={LABEL_CLASS}>Age</label>
@@ -190,11 +190,11 @@ export default function ProfilePage() {
               <textarea value={form.allergies} onChange={handleChange("allergies")} rows={2} className={INPUT_CLASS} placeholder="e.g., Penicillin, Peanuts" />
             </div>
             <div className="flex gap-3">
-              <button type="submit" className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors">
+              <button type="submit" className={BTN_PRIMARY}>
                 {profile ? "Update Profile" : "Create Profile"}
               </button>
               {isEditing && profile && (
-                <button type="button" onClick={() => setIsEditing(false)} className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold hover:bg-gray-300 transition-colors">
+                <button type="button" onClick={() => setIsEditing(false)} className={BTN_SECONDARY}>
                   Cancel
                 </button>
               )}

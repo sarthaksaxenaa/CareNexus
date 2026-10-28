@@ -35,15 +35,15 @@ export default function LoginPage() {
       subtitle="Sign in to your account"
       error={error}
       footer={
-        <p className="text-center text-sm text-gray-500 dark:text-gray-400">
+        <p className="text-center text-sm text-ink-4">
           Don&apos;t have an account?{" "}
-          <Link href="/register" className="text-blue-600 hover:text-blue-700 font-medium">
+          <Link href="/register" className="text-amethyst-300 hover:text-amethyst-200 font-medium transition-colors duration-200">
             Register
           </Link>
         </p>
       }
     >
-      <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 space-y-6">
+      <form onSubmit={handleSubmit} className="rounded-2xl bg-surface border border-edge-soft shadow-2xl shadow-black/50 p-8 space-y-6">
         <div>
           <label className={LABEL_CLASS}>Email</label>
           <input
