@@ -35,6 +35,14 @@ interface ChatResponse {
   disclaimer: string;
 }
 
+interface ChatSessionInfo {
+  id: string;
+  title: string;
+  message_count: number;
+  created_at: string;
+  is_active: boolean;
+}
+
 class ApiClient {
   private accessToken: string | null = null;
 
@@ -129,12 +137,18 @@ class ApiClient {
     });
   }
 
-  async getSessions() {
-    return this.request("/api/v1/chat/sessions");
+  async getSessions(): Promise<ChatSessionInfo[]> {
+    const data = await this.request<{ sessions: ChatSessionInfo[]; total: number }>(
+      "/api/v1/chat/sessions"
+    );
+    return data.sessions;
   }
 
-  async getSessionMessages(sessionId: string) {
-    return this.request(`/api/v1/chat/sessions/${sessionId}/messages`);
+  async getSessionMessages(sessionId: string): Promise<ChatMessage[]> {
+    const data = await this.request<{ session_id: string; messages: ChatMessage[] }>(
+      `/api/v1/chat/sessions/${sessionId}/messages`
+    );
+    return data.messages;
   }
 
   // ─── Health Profile ──────────────────────────────
@@ -165,4 +179,4 @@ class ApiClient {
 }
 
 export const api = new ApiClient();
-export type { AuthResponse, ChatMessage, ChatResponse };
+export type { AuthResponse, ChatMessage, ChatResponse, ChatSessionInfo };
