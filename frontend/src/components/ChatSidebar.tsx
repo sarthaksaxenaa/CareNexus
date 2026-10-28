@@ -3,14 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
-
-interface ChatSessionInfo {
-  id: string;
-  title: string;
-  message_count: number;
-  created_at: string;
-  is_active: boolean;
-}
+import type { ChatSessionInfo } from "@/lib/api";
 
 interface ChatSidebarProps {
   currentSessionId: string | null;
@@ -35,7 +28,7 @@ export default function ChatSidebar({
   const loadSessions = async () => {
     try {
       const data = await api.getSessions();
-      setSessions(data as ChatSessionInfo[]);
+      setSessions(data);
     } catch {
       // silently fail — sidebar is non-critical
     }
