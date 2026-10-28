@@ -19,7 +19,7 @@ const QUICK_PROMPTS = [
 export default function QuickActions({ onSelect, disabled = false }: QuickActionsProps) {
   return (
     <div className="px-4 py-3">
-      <p className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-2 text-center">
+      <p className="text-xs font-medium text-ink-4 mb-2.5 text-center uppercase tracking-wider">
         Quick symptom check — tap to start
       </p>
       <div className="flex flex-wrap justify-center gap-2">
@@ -28,7 +28,15 @@ export default function QuickActions({ onSelect, disabled = false }: QuickAction
             key={item.label}
             onClick={() => onSelect(item.prompt)}
             disabled={disabled}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-sm rounded-full
+                       bg-surface-2 text-ink-3 border border-edge
+                       hover:bg-amethyst/20 hover:text-amethyst-200 hover:border-amethyst-600
+                       hover:shadow-md hover:shadow-amethyst/25 hover:-translate-y-0.5
+                       active:translate-y-0
+                       transition-all duration-200
+                       disabled:opacity-50 disabled:cursor-not-allowed
+                       disabled:hover:translate-y-0 disabled:hover:bg-surface-2
+                       disabled:hover:text-ink-3 disabled:hover:border-edge"
           >
             <span>{item.emoji}</span>
             <span>{item.label}</span>

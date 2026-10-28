@@ -8,42 +8,128 @@ interface MessageBubbleProps {
   timestamp?: string;
 }
 
+/**
+ * Clinical severity styling.
+ *
+ * Deliberately NOT amethyst. The Obsidian Amethyst theme stops at the triage
+ * badge: emerald / amber / crimson are near-universal clinical signals and
+ * re-skinning them would trade patient safety for visual consistency.
+ */
 const TRIAGE_CONFIG = {
-  green: { bg: "bg-green-100 dark:bg-green-900/30", text: "text-green-700 dark:text-green-400", label: "🟢 Self-care", border: "border-green-200 dark:border-green-800" },
-  yellow: { bg: "bg-yellow-100 dark:bg-yellow-900/30", text: "text-yellow-700 dark:text-yellow-400", label: "🟡 See a doctor", border: "border-yellow-200 dark:border-yellow-800" },
-  red: { bg: "bg-red-100 dark:bg-red-900/30", text: "text-red-700 dark:text-red-400", label: "🔴 Emergency", border: "border-red-200 dark:border-red-800" },
-  none: { bg: "", text: "", label: "", border: "" },
+  green: {
+    bg: "bg-triage-green/15",
+    text: "text-triage-green",
+    label: "🟢 Self-care",
+    border: "border-triage-green/40",
+    glow: "shadow-triage-green/10",
+  },
+  yellow: {
+    bg: "bg-triage-amber/15",
+    text: "text-triage-amber",
+    label: "🟡 See a doctor",
+    border: "border-triage-amber/40",
+    glow: "shadow-triage-amber/10",
+  },
+  red: {
+    bg: "bg-triage-red/15",
+    text: "text-triage-red",
+    label: "🔴 Emergency",
+    border: "border-triage-red/50",
+    glow: "shadow-triage-red/20",
+  },
+  none: { bg: "", text: "", label: "", border: "", glow: "" },
 };
 
+/**
+ * Escapes HTML before any markdown transformation.
+ *
+ * The result is handed to dangerouslySetInnerHTML, so raw angle brackets that
+ * survive into the output would be live markup. The backend sanitizer guards
+ * the inbound path, but defence in depth belongs on the render path too.
+ */
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/** Inline spans: bold, code, links, italics. Order matters. */
+function renderInline(text: string): string {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(
+      /\[([^\]]+)\]\(([^)]+)\)/g,
+      '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
+    )
+    .replace(/\*([^*]+)\*/g, "<em>$1</em>");
+}
+
+/**
+ * Minimal block-level markdown renderer.
+ *
+ * Replaces a regex-only implementation that interleaved <br /> between list
+ * items, so `<ul>`/`<ol>` never wrapped cleanly. This walks lines instead and
+ * groups consecutive list items into a single list, which is both correct and
+ * far easier to reason about. Styling lives in `.prose-care` (globals.css) —
+ * the previous `prose prose-sm dark:prose-invert` classes were inert because
+ * @tailwindcss/typography is not a dependency of this project.
+ */
 function renderMarkdown(text: string): string {
-  let html = text
-    // Bold: **text**
-    .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold">$1</strong>')
-    // Inline code: `code`
-    .replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-sm font-mono">$1</code>')
-    // Links: [text](url)
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-blue-600 dark:text-blue-400 underline hover:text-blue-700" target="_blank" rel="noopener">$1</a>')
-    // Italic: *text* (after bold is already replaced)
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    // Unordered lists: - item
-    .replace(/^- (.+)$/gm, '<li class="ml-4 list-disc">$1</li>')
-    // Numbered lists: 1. item
-    .replace(/^\d+\. (.+)$/gm, '<li class="ml-4 list-decimal">$1</li>')
-    // Line breaks
-    .replace(/\n\n/g, '</p><p class="mt-2">')
-    .replace(/\n/g, "<br />");
+  const lines = escapeHtml(text).split("\n");
+  const out: string[] = [];
 
-  // Wrap list items
-  html = html.replace(
-    /(<li class="ml-4 list-disc">[^]*?<\/li>)+/g,
-    '<ul class="my-2 space-y-1">$&</ul>'
-  );
-  html = html.replace(
-    /(<li class="ml-4 list-decimal">[^]*?<\/li>)+/g,
-    '<ol class="my-2 space-y-1">$&</ol>'
-  );
+  let listTag: "ul" | "ol" | null = null;
+  let paragraph: string[] = [];
 
-  return `<p>${html}</p>`;
+  const closeParagraph = () => {
+    if (paragraph.length > 0) {
+      out.push(`<p>${renderInline(paragraph.join("<br />"))}</p>`);
+      paragraph = [];
+    }
+  };
+
+  const closeList = () => {
+    if (listTag) {
+      out.push(`</${listTag}>`);
+      listTag = null;
+    }
+  };
+
+  for (const line of lines) {
+    const bullet = /^\s*[-*]\s+(.*)$/.exec(line);
+    const numbered = /^\s*\d+\.\s+(.*)$/.exec(line);
+
+    if (bullet || numbered) {
+      closeParagraph();
+      const wanted: "ul" | "ol" = bullet ? "ul" : "ol";
+      if (listTag !== wanted) {
+        closeList();
+        out.push(`<${wanted}>`);
+        listTag = wanted;
+      }
+      const item = (bullet ?? numbered)![1];
+      out.push(`<li>${renderInline(item)}</li>`);
+      continue;
+    }
+
+    closeList();
+
+    if (line.trim() === "") {
+      closeParagraph();
+      continue;
+    }
+
+    paragraph.push(line);
+  }
+
+  closeList();
+  closeParagraph();
+
+  return out.join("");
 }
 
 export default function MessageBubble({
@@ -54,19 +140,23 @@ export default function MessageBubble({
   timestamp,
 }: MessageBubbleProps) {
   const isUser = role === "user";
-  const triage = triageLevel && triageLevel !== "none" ? TRIAGE_CONFIG[triageLevel] : null;
+  const triage =
+    triageLevel && triageLevel !== "none" ? TRIAGE_CONFIG[triageLevel] : null;
 
   return (
-    <div className={`flex ${isUser ? "justify-end" : "justify-start"} group`}>
+    <div className={`flex ${isUser ? "justify-end" : "justify-start"} group animate-rise`}>
       <div className="max-w-[85%] lg:max-w-[75%] space-y-1.5">
         {/* Avatar + Name */}
         <div className={`flex items-center gap-2 ${isUser ? "justify-end" : ""}`}>
-          <span className="text-xs font-medium text-gray-400 dark:text-gray-500">
+          <span className="text-xs font-medium text-ink-4">
             {isUser ? "You" : "🏥 CareNexus"}
           </span>
           {timestamp && (
-            <span className="text-xs text-gray-300 dark:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity">
-              {new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+            <span className="text-xs text-ink-4/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              {new Date(timestamp).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
             </span>
           )}
         </div>
@@ -75,9 +165,9 @@ export default function MessageBubble({
         <div
           className={`px-4 py-3 rounded-2xl ${
             isUser
-              ? "bg-blue-600 text-white rounded-br-md"
-              : `bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-700 rounded-bl-md ${
-                  triage ? triage.border : ""
+              ? "bg-gradient-to-br from-amethyst to-amethyst-600 text-white rounded-br-md shadow-lg shadow-amethyst/30"
+              : `bg-surface text-ink-2 border rounded-bl-md shadow-lg shadow-black/40 ${
+                  triage ? `${triage.border} ${triage.glow}` : "border-edge-soft"
                 }`
           }`}
         >
@@ -85,7 +175,7 @@ export default function MessageBubble({
             <p className="whitespace-pre-wrap">{content}</p>
           ) : (
             <div
-              className="prose prose-sm dark:prose-invert max-w-none [&_p]:my-0 [&_ul]:my-1 [&_ol]:my-1"
+              className="prose-care text-sm leading-relaxed"
               dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
             />
           )}
@@ -93,16 +183,16 @@ export default function MessageBubble({
 
         {/* Triage badge */}
         {triage && (
-          <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${triage.bg} ${triage.text}`}>
+          <div
+            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${triage.bg} ${triage.text} ${triage.border}`}
+          >
             {triage.label}
           </div>
         )}
 
         {/* Sources */}
         {sources && (
-          <p className="text-xs text-gray-400 dark:text-gray-500 px-1">
-            📚 {sources}
-          </p>
+          <p className="text-xs text-ink-4 px-1">📚 {sources}</p>
         )}
       </div>
     </div>

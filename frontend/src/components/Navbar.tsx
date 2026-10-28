@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useState, useEffect } from "react";
+import { WORDMARK_ACCENT } from "@/lib/styles";
 
 const NAV_LINKS = [
   { href: "/chat", label: "Chat", icon: "💬" },
@@ -39,14 +40,17 @@ export default function Navbar() {
   if (["/login", "/register"].includes(pathname)) return null;
 
   return (
-    <nav aria-label="Main navigation" className="sticky top-0 z-50 flex items-center justify-between px-6 py-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
+    <nav
+      aria-label="Main navigation"
+      className="sticky top-0 z-50 flex items-center justify-between px-6 py-3 bg-void/85 backdrop-blur-xl border-b border-edge"
+    >
       {/* Logo */}
-      <Link href="/" className="flex items-center gap-2 group">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center text-white text-sm shadow-sm group-hover:shadow-md transition-shadow">
+      <Link href="/" className="flex items-center gap-2.5 group">
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amethyst to-amethyst-400 flex items-center justify-center text-sm shadow-lg shadow-amethyst/40 group-hover:shadow-amethyst-400/50 transition-shadow duration-300">
           🏥
         </div>
-        <span className="text-lg font-bold text-gray-900 dark:text-white">
-          Care<span className="text-blue-600 dark:text-blue-400">Nexus</span>
+        <span className="text-lg font-bold text-ink tracking-tight">
+          Care<span className={WORDMARK_ACCENT}>Nexus</span>
         </span>
       </Link>
 
@@ -58,10 +62,11 @@ export default function Navbar() {
             <Link
               key={link.href}
               href={link.href}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              aria-current={isActive ? "page" : undefined}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                 isActive
-                  ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
-                  : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white"
+                  ? "bg-amethyst/25 text-amethyst-200 ring-1 ring-amethyst-600/50"
+                  : "text-ink-4 hover:bg-surface-2 hover:text-ink-2"
               }`}
             >
               <span className="text-base">{link.icon}</span>
@@ -76,13 +81,13 @@ export default function Navbar() {
         {isAuth ? (
           <>
             {userName && (
-              <span className="hidden md:inline text-xs text-gray-500 dark:text-gray-400">
+              <span className="hidden md:inline text-xs text-ink-4">
                 {userName}
               </span>
             )}
             <button
               onClick={handleLogout}
-              className="text-xs text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="text-xs text-ink-4 hover:text-triage-red px-3 py-1.5 rounded-lg hover:bg-triage-red/10 transition-colors duration-200"
             >
               Logout
             </button>
@@ -91,13 +96,13 @@ export default function Navbar() {
           <div className="flex items-center gap-2">
             <Link
               href="/login"
-              className="text-xs text-gray-600 dark:text-gray-400 hover:text-blue-600 px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="text-xs text-ink-4 hover:text-amethyst-200 px-3 py-1.5 rounded-lg hover:bg-surface-2 transition-colors duration-200"
             >
               Sign in
             </Link>
             <Link
               href="/register"
-              className="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              className="text-xs font-medium text-white px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-amethyst to-amethyst-500 hover:from-amethyst-600 hover:to-amethyst-400 shadow-md shadow-amethyst/30 transition-all duration-200"
             >
               Register
             </Link>
@@ -110,10 +115,11 @@ export default function Navbar() {
             <Link
               key={link.href}
               href={link.href}
-              className={`p-2 rounded-lg text-base ${
+              aria-label={link.label}
+              className={`p-2 rounded-lg text-base transition-colors duration-200 ${
                 pathname === link.href
-                  ? "bg-blue-50 dark:bg-blue-900/30"
-                  : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                  ? "bg-amethyst/25 ring-1 ring-amethyst-600/50"
+                  : "hover:bg-surface-2"
               }`}
               title={link.label}
             >
