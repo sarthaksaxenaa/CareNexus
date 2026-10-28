@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
@@ -17,6 +17,15 @@ export const metadata: Metadata = {
   ],
 };
 
+/**
+ * Paints the browser chrome (mobile address bar, PWA splash) jet black so the
+ * app does not flash white on load. `colorScheme` keeps native widgets dark.
+ */
+export const viewport: Viewport = {
+  themeColor: "#050505",
+  colorScheme: "dark",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -24,7 +33,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="scroll-smooth">
-      <body className={`${inter.className} antialiased`}>{children}</body>
+      <body className={`${inter.className} bg-void text-ink-2 antialiased`}>
+        {children}
+      </body>
     </html>
   );
 }

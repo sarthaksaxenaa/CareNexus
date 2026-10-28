@@ -11,7 +11,8 @@ export default function Icon() {
           width: "32px",
           height: "32px",
           borderRadius: "8px",
-          background: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
+          // Royal Amethyst lockup on jet black — matches the in-app wordmark.
+          background: "linear-gradient(135deg, #3B0A6B 0%, #9333EA 100%)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
