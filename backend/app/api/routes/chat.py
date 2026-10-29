@@ -2,12 +2,12 @@
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_current_user
 from app.core.database import get_db
-from app.core.rate_limiter import CHAT_RATE_LIMIT, get_client_ip, get_rate_limiter
+from app.core.rate_limiter import CHAT_RATE_LIMIT, get_rate_limiter
 from app.core.sanitizer import sanitize_input
 from app.core.triage.engine import analyze_symptoms
 from app.models.chat import MessageRole
@@ -34,14 +34,12 @@ router = APIRouter()
 @router.post("/message", response_model=ChatResponse)
 async def send_message(
     request: SendMessageRequest,
-    http_request: Request,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Send a message to CareNexus AI and receive a triage response."""
-    # Rate limit check (per-IP, 10 req/min)
-    client_ip = get_client_ip(http_request)
-    get_rate_limiter().check(client_ip, CHAT_RATE_LIMIT)
+    # Rate limit per user, not per IP: many students share one campus NAT address.
+    get_rate_limiter().check(f"user:{current_user.id}", CHAT_RATE_LIMIT)
 
     # Sanitize input — strip XSS, detect prompt injection
     sanitized = sanitize_input(request.message)

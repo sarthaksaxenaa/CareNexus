@@ -7,6 +7,7 @@ Architecture:
     - Sliding window: tracks request timestamps within the window period
     - Per-IP isolation: separate counters for each client IP
     - Auto-cleanup: expired entries are pruned on each check
+    - Per-rule buckets: chat, auth and profile limits are counted separately
     - Thread-safe: uses dict-level operations (GIL-protected in CPython)
 
 Production Note:
@@ -22,7 +23,12 @@ from dataclasses import dataclass
 
 from fastapi import HTTPException, Request, status
 
+from app.core.config import settings
+
 logger = logging.getLogger(__name__)
+
+# Longest window any rule uses; keys idle for longer are safe to forget.
+_MAX_WINDOW_SECONDS = 60
 
 
 @dataclass
@@ -50,6 +56,20 @@ class SlidingWindowRateLimiter:
 
     def __init__(self) -> None:
         self._requests: dict[str, list[float]] = defaultdict(list)
+        self._last_sweep = 0.0
+
+    def _prune_idle(self, now: float) -> None:
+        """Drop keys with no recent requests so memory stays bounded.
+
+        Runs at most once a second; anything older than the longest window
+        configured below can no longer affect a decision.
+        """
+        if now - self._last_sweep < 1:
+            return
+        self._last_sweep = now
+        horizon = now - _MAX_WINDOW_SECONDS
+        for k in [k for k, ts in self._requests.items() if not ts or ts[-1] <= horizon]:
+            del self._requests[k]
 
     def check(self, key: str, config: RateLimitConfig) -> bool:
         """Check if a request is allowed under the rate limit.
@@ -65,6 +85,9 @@ class SlidingWindowRateLimiter:
             HTTPException(429) if rate limit is exceeded.
         """
         now = time.time()
+        self._prune_idle(now)
+        # Each rule gets its own bucket, so chat traffic never eats the login quota.
+        key = f"{config.name}:{key}"
         window_start = now - config.window_seconds
 
         # Prune expired timestamps
@@ -99,7 +122,9 @@ class SlidingWindowRateLimiter:
         now = time.time()
         window_start = now - config.window_seconds
         current_count = sum(
-            1 for ts in self._requests.get(key, []) if ts > window_start
+            1
+            for ts in self._requests.get(f"{config.name}:{key}", [])
+            if ts > window_start
         )
         return max(0, config.max_requests - current_count)
 
@@ -110,7 +135,8 @@ class SlidingWindowRateLimiter:
             key: Specific key to reset. If None, resets all counters.
         """
         if key:
-            self._requests.pop(key, None)
+            for k in [k for k in self._requests if k.split(":", 1)[-1] == key]:
+                del self._requests[k]
         else:
             self._requests.clear()
 
@@ -137,14 +163,25 @@ def get_rate_limiter() -> SlidingWindowRateLimiter:
 
 
 def get_client_ip(request: Request) -> str:
-    """Extract client IP from request, handling proxies."""
-    forwarded = request.headers.get("X-Forwarded-For")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
+    """Return the caller's IP address.
+
+    X-Forwarded-For is client-controlled: anyone can send it, so trusting it
+    by default lets an attacker pick a fresh "IP" per request and walk past
+    the limiter. It is honoured only when TRUST_PROXY_HEADERS says a reverse
+    proxy we control sets it.
+    """
+    if settings.TRUST_PROXY_HEADERS:
+        forwarded = request.headers.get("X-Forwarded-For")
+        if forwarded:
+            return forwarded.split(",")[0].strip()
     return request.client.host if request.client else "unknown"
 
 
 # Rate limit configs (imported by route handlers)
-CHAT_RATE_LIMIT = RateLimitConfig(max_requests=10, window_seconds=60, name="chat")
-AUTH_RATE_LIMIT = RateLimitConfig(max_requests=5, window_seconds=60, name="auth")
+CHAT_RATE_LIMIT = RateLimitConfig(
+    max_requests=settings.RATE_LIMIT_CHAT, window_seconds=60, name="chat"
+)
+AUTH_RATE_LIMIT = RateLimitConfig(
+    max_requests=settings.RATE_LIMIT_AUTH, window_seconds=60, name="auth"
+)
 PROFILE_RATE_LIMIT = RateLimitConfig(max_requests=20, window_seconds=60, name="profile")
