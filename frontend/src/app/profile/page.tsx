@@ -1,10 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
-import { INPUT_CLASS, LABEL_CLASS, BTN_PRIMARY, BTN_SECONDARY, BTN_PRIMARY_SM, ALERT_ERROR, ALERT_SUCCESS, CARD } from "@/lib/styles";
 import Navbar from "@/components/Navbar";
+import {
+  ALERT_ERROR,
+  ALERT_SUCCESS,
+  BTN_PRIMARY_SM,
+  BTN_SECONDARY,
+  INPUT_CLASS,
+  LABEL_CLASS,
+  TRACKED,
+} from "@/lib/styles";
 
 interface HealthProfile {
   id: string;
@@ -16,38 +24,53 @@ interface HealthProfile {
   allergies: string | null;
 }
 
-// ─── Constants (outside component to avoid re-creation per render) ────────
+type FormState = Record<Exclude<keyof HealthProfile, "id">, string>;
+
+const EMPTY_FORM: FormState = {
+  age: "",
+  gender: "",
+  blood_group: "",
+  known_conditions: "",
+  current_medications: "",
+  allergies: "",
+};
+
 const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"] as const;
 const GENDERS = ["Male", "Female", "Non-binary", "Prefer not to say"] as const;
 
-const PROFILE_FIELDS = [
-  { label: "Age", key: "age" as const, icon: "🎂" },
-  { label: "Gender", key: "gender" as const, icon: "👤" },
-  { label: "Blood Group", key: "blood_group" as const, icon: "🩸" },
-  { label: "Known Conditions", key: "known_conditions" as const, icon: "📋" },
-  { label: "Current Medications", key: "current_medications" as const, icon: "💊" },
-  { label: "Allergies", key: "allergies" as const, icon: "⚠️" },
+// `used` marks the fields the triage engine reads (core/triage/engine.py).
+const FIELDS: { key: keyof FormState; label: string; used: boolean }[] = [
+  { key: "age", label: "Age", used: true },
+  { key: "gender", label: "Sex", used: true },
+  { key: "known_conditions", label: "Known conditions", used: true },
+  { key: "blood_group", label: "Blood group", used: false },
+  { key: "current_medications", label: "Current medicines", used: false },
+  { key: "allergies", label: "Allergies", used: false },
 ];
+
+function toForm(p: HealthProfile): FormState {
+  return {
+    age: p.age?.toString() ?? "",
+    gender: p.gender ?? "",
+    blood_group: p.blood_group ?? "",
+    known_conditions: p.known_conditions ?? "",
+    current_medications: p.current_medications ?? "",
+    allergies: p.allergies ?? "",
+  };
+}
 
 export default function ProfilePage() {
   const router = useRouter();
   const [profile, setProfile] = useState<HealthProfile | null>(null);
+  const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const [form, setForm] = useState({
-    age: "",
-    gender: "",
-    blood_group: "",
-    known_conditions: "",
-    current_medications: "",
-    allergies: "",
-  });
-
-  /** Generic change handler — eliminates 6 inline setForm calls. */
-  const handleChange = (field: keyof typeof form) =>
+  const handleChange =
+    (field: keyof FormState) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
@@ -57,151 +80,216 @@ export default function ProfilePage() {
       return;
     }
 
-    const fetchProfile = async () => {
-      try {
-        const data = (await api.getHealthProfile()) as HealthProfile;
+    let cancelled = false;
+    (api.getHealthProfile() as Promise<HealthProfile>)
+      .then((data) => {
+        if (cancelled) return;
         setProfile(data);
-        setForm({
-          age: data.age?.toString() || "",
-          gender: data.gender || "",
-          blood_group: data.blood_group || "",
-          known_conditions: data.known_conditions || "",
-          current_medications: data.current_medications || "",
-          allergies: data.allergies || "",
-        });
-      } catch {
-        setIsEditing(true);
-      } finally {
-        setIsLoading(false);
-      }
+        setForm(toForm(data));
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        const message = err instanceof Error ? err.message : "";
+        // Only "no profile yet" means "create one"; anything else is a real error.
+        if (/not found/i.test(message)) {
+          setIsEditing(true);
+        } else {
+          setError(message || "Your profile could not be loaded.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+    return () => {
+      cancelled = true;
     };
-
-    fetchProfile();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setSuccess("");
+    setIsSaving(true);
 
     const payload = {
-      age: form.age ? parseInt(form.age) : null,
+      age: form.age ? Number.parseInt(form.age, 10) : null,
       gender: form.gender || null,
       blood_group: form.blood_group || null,
-      known_conditions: form.known_conditions || null,
-      current_medications: form.current_medications || null,
-      allergies: form.allergies || null,
+      known_conditions: form.known_conditions.trim() || null,
+      current_medications: form.current_medications.trim() || null,
+      allergies: form.allergies.trim() || null,
     };
 
     try {
-      if (profile) {
-        await api.updateHealthProfile(payload);
-        setSuccess("Profile updated successfully!");
-      } else {
-        await api.createHealthProfile(payload);
-        setSuccess("Profile created successfully!");
-      }
-      // Re-fetch to sync state
-      const data = (await api.getHealthProfile()) as HealthProfile;
-      setProfile(data);
+      const saved = (await (profile
+        ? api.updateHealthProfile(payload)
+        : api.createHealthProfile(payload))) as HealthProfile;
+      setProfile(saved);
+      setForm(toForm(saved));
       setIsEditing(false);
+      setSuccess(profile ? "Profile saved." : "Profile created.");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to save profile");
+      setError(err instanceof Error ? err.message : "Your profile could not be saved.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-void" role="status" aria-label="Loading profile">
-        <div className="animate-spin rounded-full h-12 w-12 border-2 border-edge border-b-amethyst-300" />
-      </div>
-    );
-  }
+  const fieldId = (key: string) => `profile-${key}`;
 
   return (
-    <main className="min-h-screen bg-void">
+    <>
       <Navbar />
-
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold tracking-tight text-ink">🩺 Health Profile</h2>
-          {profile && !isEditing && (
-            <button
-              onClick={() => setIsEditing(true)}
-              className={BTN_PRIMARY_SM}
-            >
-              Edit Profile
-            </button>
-          )}
-        </div>
-
-        {error && (
-          <div className={`mb-4 ${ALERT_ERROR}`} role="alert">{error}</div>
-        )}
-        {success && (
-          <div className={`mb-4 ${ALERT_SUCCESS}`} role="status">{success}</div>
-        )}
-
-        {!isEditing && profile ? (
-          <div className={`${CARD} p-6 space-y-4`}>
-            {PROFILE_FIELDS.map((item) => (
-              <div key={item.key} className="flex items-start gap-3 py-2 border-b border-edge-soft last:border-0">
-                <span className="text-xl">{item.icon}</span>
-                <div>
-                  <p className="text-xs font-medium text-ink-4 uppercase tracking-wider">{item.label}</p>
-                  <p className="text-ink">{profile[item.key] || "Not provided"}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className={`${CARD} p-6 space-y-5`}>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className={LABEL_CLASS}>Age</label>
-                <input type="number" value={form.age} onChange={handleChange("age")} min="0" max="150" className={INPUT_CLASS} placeholder="25" />
-              </div>
-              <div>
-                <label className={LABEL_CLASS}>Gender</label>
-                <select value={form.gender} onChange={handleChange("gender")} className={INPUT_CLASS}>
-                  <option value="">Select</option>
-                  {GENDERS.map((g) => <option key={g} value={g}>{g}</option>)}
-                </select>
-              </div>
-            </div>
-            <div>
-              <label className={LABEL_CLASS}>Blood Group</label>
-              <select value={form.blood_group} onChange={handleChange("blood_group")} className={INPUT_CLASS}>
-                <option value="">Select</option>
-                {BLOOD_GROUPS.map((bg) => <option key={bg} value={bg}>{bg}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className={LABEL_CLASS}>Known Medical Conditions</label>
-              <textarea value={form.known_conditions} onChange={handleChange("known_conditions")} rows={3} className={INPUT_CLASS} placeholder="e.g., Diabetes, Hypertension" />
-            </div>
-            <div>
-              <label className={LABEL_CLASS}>Current Medications</label>
-              <textarea value={form.current_medications} onChange={handleChange("current_medications")} rows={2} className={INPUT_CLASS} placeholder="e.g., Metformin 500mg" />
-            </div>
-            <div>
-              <label className={LABEL_CLASS}>Allergies</label>
-              <textarea value={form.allergies} onChange={handleChange("allergies")} rows={2} className={INPUT_CLASS} placeholder="e.g., Penicillin, Peanuts" />
-            </div>
-            <div className="flex gap-3">
-              <button type="submit" className={BTN_PRIMARY}>
-                {profile ? "Update Profile" : "Create Profile"}
-              </button>
-              {isEditing && profile && (
-                <button type="button" onClick={() => setIsEditing(false)} className={BTN_SECONDARY}>
-                  Cancel
+      <main className="min-h-screen bg-void">
+        <div className="mx-auto max-w-5xl px-5 py-14 sm:px-8 sm:py-20">
+          <div className="grid gap-12 lg:grid-cols-[1fr_1.4fr]">
+            <header>
+              <h1 className="font-display font-light leading-[0.95] text-lilac text-[clamp(3rem,6vw,4.75rem)]">
+                Health profile
+              </h1>
+              <p className="mt-6 max-w-[42ch] font-light leading-relaxed text-ink-3">
+                Your age, sex and known conditions are used to adjust how urgent an
+                assessment is. Blood group, medicines and allergies are kept for your
+                own reference.
+              </p>
+              {profile && !isEditing && (
+                <button onClick={() => setIsEditing(true)} className={`mt-8 ${BTN_PRIMARY_SM}`}>
+                  Edit profile
                 </button>
               )}
-            </div>
-          </form>
-        )}
-      </div>
-    </main>
+            </header>
+
+            <section aria-live="polite" aria-busy={isLoading}>
+              {error && (
+                <div className={`mb-6 ${ALERT_ERROR}`} role="alert">
+                  {error}
+                </div>
+              )}
+              {success && (
+                <div className={`mb-6 ${ALERT_SUCCESS}`} role="status">
+                  {success}
+                </div>
+              )}
+
+              {isLoading ? (
+                <p className="font-light text-ink-4">Loading your profile…</p>
+              ) : !isEditing && profile ? (
+                <dl className="border-t border-edge">
+                  {FIELDS.map((f) => (
+                    <div key={f.key} className="grid grid-cols-[11rem_1fr] gap-4 border-b border-edge-soft py-4">
+                      <dt className="text-sm font-light text-ink-4">
+                        {f.label}
+                        {f.used && <span className="sr-only"> (used in assessments)</span>}
+                      </dt>
+                      <dd className={profile[f.key] ? "text-ink" : "font-light text-ink-4"}>
+                        {profile[f.key] || "Not provided"}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              ) : (
+                isEditing && (
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    {!profile && (
+                      <p className="font-display text-2xl text-ink">
+                        You have not created a profile yet.
+                      </p>
+                    )}
+                    <div className="grid grid-cols-2 gap-5">
+                      <div>
+                        <label htmlFor={fieldId("age")} className={LABEL_CLASS}>Age</label>
+                        <input
+                          id={fieldId("age")}
+                          type="number"
+                          inputMode="numeric"
+                          min="0"
+                          max="150"
+                          value={form.age}
+                          onChange={handleChange("age")}
+                          className={INPUT_CLASS}
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor={fieldId("gender")} className={LABEL_CLASS}>Sex</label>
+                        <select id={fieldId("gender")} value={form.gender} onChange={handleChange("gender")} className={INPUT_CLASS}>
+                          <option value="">Not provided</option>
+                          {GENDERS.map((g) => (
+                            <option key={g} value={g}>{g}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label htmlFor={fieldId("known_conditions")} className={LABEL_CLASS}>Known conditions</label>
+                      <textarea
+                        id={fieldId("known_conditions")}
+                        rows={3}
+                        value={form.known_conditions}
+                        onChange={handleChange("known_conditions")}
+                        className={INPUT_CLASS}
+                        placeholder="For example: diabetes, high blood pressure"
+                      />
+                    </div>
+                    <div className="border-t border-edge-soft pt-6">
+                      <p className={`${TRACKED} mb-5 text-ink-4`}>For your reference</p>
+                      <div className="space-y-5">
+                        <div>
+                          <label htmlFor={fieldId("blood_group")} className={LABEL_CLASS}>Blood group</label>
+                          <select id={fieldId("blood_group")} value={form.blood_group} onChange={handleChange("blood_group")} className={INPUT_CLASS}>
+                            <option value="">Not provided</option>
+                            {BLOOD_GROUPS.map((bg) => (
+                              <option key={bg} value={bg}>{bg}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label htmlFor={fieldId("current_medications")} className={LABEL_CLASS}>Current medicines</label>
+                          <textarea
+                            id={fieldId("current_medications")}
+                            rows={2}
+                            value={form.current_medications}
+                            onChange={handleChange("current_medications")}
+                            className={INPUT_CLASS}
+                            placeholder="For example: metformin 500 mg"
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor={fieldId("allergies")} className={LABEL_CLASS}>Allergies</label>
+                          <textarea
+                            id={fieldId("allergies")}
+                            rows={2}
+                            value={form.allergies}
+                            onChange={handleChange("allergies")}
+                            className={INPUT_CLASS}
+                            placeholder="For example: penicillin, peanuts"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-3 pt-2">
+                      <button type="submit" disabled={isSaving} className={BTN_PRIMARY_SM + " px-8 py-3"}>
+                        {isSaving ? "Saving…" : profile ? "Save profile" : "Create profile"}
+                      </button>
+                      {profile && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setForm(toForm(profile));
+                            setIsEditing(false);
+                          }}
+                          className={BTN_SECONDARY}
+                        >
+                          Cancel
+                        </button>
+                      )}
+                    </div>
+                  </form>
+                )
+              )}
+            </section>
+          </div>
+        </div>
+      </main>
+    </>
   );
 }
