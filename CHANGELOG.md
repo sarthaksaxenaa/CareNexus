@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-30
+
+### Added
+- Editorial interface: Cormorant Garamond and Jost (self-hosted), jet black and royal amethyst palette, redesigned pages, themed 404 page
+- Interactive 3D body map with an accessible list fallback
+- Playwright end-to-end suite (26 tests) running in CI against a production build, the real API and a database
+- Retrieval quality gate: 43 labelled and 15 held-out queries, with `scripts/eval_retrieval.py`
+- CI: dependency audits (pip-audit, npm audit), coverage floor of 90%, deprecations as errors, Dependabot
+- One-command start (`run.py`, `start.ps1`) that installs changed dependencies
+
+### Changed
+- Retrieval indexes symptom fields only, with field weights and stemming: correct first result 62.8% → 86.0% (held-out 73.3% → 93.3%)
+- Chat rate limit is per user instead of per IP
+- Health profile updates: a field sent as null is cleared
+- SQLite is the default database; `postgres://` URLs are accepted
+- Answers are plain text without emoji
+
+### Fixed
+- Security: bcrypt 72-byte truncation (passwords now SHA-256 pre-hashed), spoofable `X-Forwarded-For` bypass of rate limits, shared rate-limit buckets, refresh token in the URL, deactivated users could refresh tokens
+- Dependencies with published advisories: Next.js (critical RCE), Starlette, PyJWT, python-multipart, python-dotenv, Vitest, pytest
+- Expired sessions showed "Invalid or expired token" instead of renewing or signing out
+- Timestamps were shown 5 h 30 off for users in India (missing UTC offset)
+- Errors displayed as "[object Object]"
+- Duplicate e-mail with different case returned 500; malformed token subject returned 500
+- Foreign keys and cascades were not enforced on SQLite
+- Session list was not ordered by latest activity
+- Docker images and compose stack did not build; `gemini-2.0-flash` (retired) was the default model
+
+### Removed
+- Placeholder deployment workflow that only printed text
+- Unused Redis and ChromaDB services and settings
+
 ## [0.4.0] - 2026-10-19
 
 ### Added — Security Wiring
