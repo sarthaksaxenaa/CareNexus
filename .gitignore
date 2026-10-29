@@ -82,3 +82,6 @@ CLAUDE.md
 
 # ─── College submission artifacts ────────────
 nexus.docx
+
+# End-to-end test database
+e2e-test.db*
