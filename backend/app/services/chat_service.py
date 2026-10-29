@@ -1,8 +1,9 @@
 """Chat service — handles chat sessions, messages, and AI response orchestration."""
 
 import uuid
+from datetime import UTC, datetime
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.chat import ChatSession, Message, MessageRole, TriageLevel
@@ -78,6 +79,13 @@ async def add_message(
         sources=sources,
     )
     db.add(message)
+    # Adding a child row does not touch the parent, so bump the session's
+    # activity time explicitly; the sidebar sorts by it.
+    await db.execute(
+        update(ChatSession)
+        .where(ChatSession.id == session_id)
+        .values(updated_at=datetime.now(UTC))
+    )
     await db.flush()
     await db.refresh(message)
     return message
