@@ -26,10 +26,10 @@ export default function BodyRegionList({ selected, onSelect }: BodyRegionListPro
               type="button"
               onClick={() => onSelect(region.id)}
               aria-pressed={isSelected}
-              className={`w-full rounded-lg border px-3 py-2 text-left text-sm transition-all duration-200 ${
+              className={`w-full rounded-sm border px-3 py-2 text-left text-sm font-light transition-colors duration-200 ${
                 isSelected
-                  ? "border-amethyst-400 bg-amethyst/30 text-amethyst-200 ring-1 ring-amethyst-400/50"
-                  : "border-edge bg-surface-2 text-ink-3 hover:border-amethyst-600 hover:bg-surface-3 hover:text-ink-2"
+                  ? "border-lilac/70 bg-amethyst/40 text-ink"
+                  : "border-edge-soft text-ink-3 hover:border-lilac/40 hover:text-ink"
               }`}
             >
               {region.label}

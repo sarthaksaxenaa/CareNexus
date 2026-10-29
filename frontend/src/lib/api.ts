@@ -40,6 +40,8 @@ interface ChatSessionInfo {
   title: string;
   message_count: number;
   created_at: string;
+  /** Time of the latest message; the list is sorted by it. */
+  updated_at: string;
   is_active: boolean;
 }
 

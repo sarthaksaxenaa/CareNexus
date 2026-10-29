@@ -1,5 +1,9 @@
 "use client";
 
+import { TRACKED } from "@/lib/styles";
+import { parseApiDate } from "@/lib/time";
+import { TRIAGE, asTriageLevel } from "@/lib/triage";
+
 interface MessageBubbleProps {
   role: "user" | "assistant" | "system";
   content: string;
@@ -7,38 +11,6 @@ interface MessageBubbleProps {
   sources: string | null;
   timestamp?: string;
 }
-
-/**
- * Clinical severity styling.
- *
- * Deliberately NOT amethyst. The Obsidian Amethyst theme stops at the triage
- * badge: emerald / amber / crimson are near-universal clinical signals and
- * re-skinning them would trade patient safety for visual consistency.
- */
-const TRIAGE_CONFIG = {
-  green: {
-    bg: "bg-triage-green/15",
-    text: "text-triage-green",
-    label: "🟢 Self-care",
-    border: "border-triage-green/40",
-    glow: "shadow-triage-green/10",
-  },
-  yellow: {
-    bg: "bg-triage-amber/15",
-    text: "text-triage-amber",
-    label: "🟡 See a doctor",
-    border: "border-triage-amber/40",
-    glow: "shadow-triage-amber/10",
-  },
-  red: {
-    bg: "bg-triage-red/15",
-    text: "text-triage-red",
-    label: "🔴 Emergency",
-    border: "border-triage-red/50",
-    glow: "shadow-triage-red/20",
-  },
-  none: { bg: "", text: "", label: "", border: "", glow: "" },
-};
 
 /**
  * Escapes HTML before any markdown transformation.
@@ -140,63 +112,49 @@ export default function MessageBubble({
   timestamp,
 }: MessageBubbleProps) {
   const isUser = role === "user";
-  const triage =
-    triageLevel && triageLevel !== "none" ? TRIAGE_CONFIG[triageLevel] : null;
+  const level = isUser ? null : asTriageLevel(triageLevel);
+  const triage = level ? TRIAGE[level] : null;
+  const time = timestamp
+    ? parseApiDate(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    : null;
+
+  if (isUser) {
+    return (
+      <div className="flex justify-end animate-rise">
+        <div className="max-w-[85%] lg:max-w-[70%]">
+          <p className="whitespace-pre-wrap rounded-sm bg-amethyst/45 px-4 py-3 text-[15px] font-light leading-relaxed text-ink ring-1 ring-inset ring-amethyst-200/15">
+            {content}
+          </p>
+          {time && <p className="mt-1.5 text-right text-xs text-ink-4">{time}</p>}
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className={`flex ${isUser ? "justify-end" : "justify-start"} group animate-rise`}>
-      <div className="max-w-[85%] lg:max-w-[75%] space-y-1.5">
-        {/* Avatar + Name */}
-        <div className={`flex items-center gap-2 ${isUser ? "justify-end" : ""}`}>
-          <span className="text-xs font-medium text-ink-4">
-            {isUser ? "You" : "🏥 CareNexus"}
-          </span>
-          {timestamp && (
-            <span className="text-xs text-ink-4/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-              {new Date(timestamp).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </span>
-          )}
-        </div>
+    <article className="max-w-[92%] lg:max-w-[78%] animate-rise">
+      <header className="mb-2 flex items-baseline gap-3">
+        <span className="font-display text-lg italic text-lilac">CareNexus</span>
+        {time && <span className="text-xs text-ink-4">{time}</span>}
+      </header>
 
-        {/* Message bubble */}
-        <div
-          className={`px-4 py-3 rounded-2xl ${
-            isUser
-              ? "bg-gradient-to-br from-amethyst to-amethyst-600 text-white rounded-br-md shadow-lg shadow-amethyst/30"
-              : `bg-surface text-ink-2 border rounded-bl-md shadow-lg shadow-black/40 ${
-                  triage ? `${triage.border} ${triage.glow}` : "border-edge-soft"
-                }`
-          }`}
-        >
-          {isUser ? (
-            <p className="whitespace-pre-wrap">{content}</p>
-          ) : (
-            <div
-              className="prose-care text-sm leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
-            />
-          )}
-        </div>
+      {triage && (
+        <p className={`mb-3 flex items-center gap-2.5 ${TRACKED} ${triage.text}`}>
+          <span aria-hidden="true" className={`h-2 w-2 rounded-full ${triage.dot}`} />
+          {triage.label}
+        </p>
+      )}
 
-        {/* Triage badge */}
-        {triage && (
-          <div
-            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${triage.bg} ${triage.text} ${triage.border}`}
-          >
-            {triage.label}
-          </div>
-        )}
+      <div
+        className={`prose-care border-l pl-5 text-[15px] font-light leading-relaxed text-ink-2 ${
+          triage ? triage.rule : "border-edge"
+        }`}
+        dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
+      />
 
-        {/* Sources */}
-        {sources && (
-          <p className="text-xs text-ink-4 px-1">📚 {sources}</p>
-        )}
-      </div>
-    </div>
+      {sources && (
+        <p className="mt-3 pl-5 text-xs font-light text-ink-4">Sources: {sources}</p>
+      )}
+    </article>
   );
 }
-
-export { TRIAGE_CONFIG };
