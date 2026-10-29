@@ -88,12 +88,16 @@ async def get_daily_usage(
     # Build complete date range
     daily_stats = []
     for i in range(days):
-        date = (datetime.now(timezone.utc) - timedelta(days=days - 1 - i)).strftime("%Y-%m-%d")
-        daily_stats.append({
-            "date": date,
-            "messages": msg_by_date.get(date, 0),
-            "sessions": session_by_date.get(date, 0),
-        })
+        date = (datetime.now(timezone.utc) - timedelta(days=days - 1 - i)).strftime(
+            "%Y-%m-%d"
+        )
+        daily_stats.append(
+            {
+                "date": date,
+                "messages": msg_by_date.get(date, 0),
+                "sessions": session_by_date.get(date, 0),
+            }
+        )
 
     return daily_stats
 
@@ -105,15 +109,11 @@ async def get_overview_stats(db: AsyncSession) -> dict:
         Dict with total sessions, messages, avg messages per session, etc.
     """
     # Total sessions
-    total_sessions = await db.execute(
-        select(func.count(ChatSession.id))
-    )
+    total_sessions = await db.execute(select(func.count(ChatSession.id)))
     session_count = total_sessions.scalar() or 0
 
     # Total messages
-    total_messages = await db.execute(
-        select(func.count(Message.id))
-    )
+    total_messages = await db.execute(select(func.count(Message.id)))
     message_count = total_messages.scalar() or 0
 
     # User messages vs assistant messages
@@ -123,7 +123,9 @@ async def get_overview_stats(db: AsyncSession) -> dict:
     user_messages = user_msg_count.scalar() or 0
 
     # Average messages per session
-    avg_per_session = round(message_count / session_count, 1) if session_count > 0 else 0.0
+    avg_per_session = (
+        round(message_count / session_count, 1) if session_count > 0 else 0.0
+    )
 
     # Red flag count (emergency triage)
     red_flag_count = await db.execute(

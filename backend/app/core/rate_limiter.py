@@ -18,7 +18,7 @@ Production Note:
 import logging
 import time
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from fastapi import HTTPException, Request, status
 
@@ -68,9 +68,7 @@ class SlidingWindowRateLimiter:
         window_start = now - config.window_seconds
 
         # Prune expired timestamps
-        self._requests[key] = [
-            ts for ts in self._requests[key] if ts > window_start
-        ]
+        self._requests[key] = [ts for ts in self._requests[key] if ts > window_start]
 
         current_count = len(self._requests[key])
 

@@ -62,9 +62,7 @@ async def send_message(
             )
     else:
         # Create new session with first few words as title
-        title = clean_message[:50].strip() + (
-            "..." if len(clean_message) > 50 else ""
-        )
+        title = clean_message[:50].strip() + ("..." if len(clean_message) > 50 else "")
         session = await create_session(db, current_user.id, title)
 
     # Save user message

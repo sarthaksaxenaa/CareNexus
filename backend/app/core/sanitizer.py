@@ -51,16 +51,16 @@ _INJECTION_PATTERNS: tuple[re.Pattern, ...] = (
     re.compile(r"ignore\s+(all\s+)?above\s+instructions", re.IGNORECASE),
     re.compile(r"disregard\s+(all\s+)?(previous|above|prior)", re.IGNORECASE),
     re.compile(r"forget\s+(all\s+)?(previous|above|prior)", re.IGNORECASE),
-
     # System prompt extraction
-    re.compile(r"(reveal|show|display|print|output)\s+(your\s+)?(system\s+)?prompt", re.IGNORECASE),
+    re.compile(
+        r"(reveal|show|display|print|output)\s+(your\s+)?(system\s+)?prompt",
+        re.IGNORECASE,
+    ),
     re.compile(r"what\s+(are|is)\s+your\s+(system\s+)?instructions", re.IGNORECASE),
-
     # Role hijacking
     re.compile(r"you\s+are\s+now\s+(?:a|an|the)\s+(?!patient|user)", re.IGNORECASE),
     re.compile(r"act\s+as\s+(?:a|an)\s+(?!patient|user)", re.IGNORECASE),
     re.compile(r"pretend\s+(to\s+be|you\s+are)\s+(?!sick|ill|patient)", re.IGNORECASE),
-
     # Jailbreak markers
     re.compile(r"\[(?:system|SYSTEM)\]", re.IGNORECASE),
     re.compile(r"```\s*system", re.IGNORECASE),
@@ -84,6 +84,7 @@ def detect_prompt_injection(text: str) -> bool:
 
 
 # ─── Input Sanitization ─────────────────────────────────────────────────────
+
 
 class SanitizationResult:
     """Result of input sanitization."""

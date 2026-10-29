@@ -22,7 +22,7 @@ import json
 import logging
 import time
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -231,11 +231,11 @@ class GeminiService(LLMService):
                 from google import genai
 
                 self._client = genai.Client(api_key=self._api_key)
-            except ImportError:
+            except ImportError as err:
                 raise LLMServiceError(
                     "google-genai package not installed. "
                     "Install with: pip install google-genai"
-                )
+                ) from err
         return self._client
 
     async def _call_api(
@@ -307,10 +307,10 @@ class OpenAIService(LLMService):
                 import openai
 
                 self._client = openai.AsyncOpenAI(api_key=self._api_key)
-            except ImportError:
+            except ImportError as err:
                 raise LLMServiceError(
                     "openai package not installed. Install with: pip install openai"
-                )
+                ) from err
         return self._client
 
     async def _call_api(

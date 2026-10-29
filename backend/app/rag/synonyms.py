@@ -17,7 +17,14 @@ Architecture:
 SYNONYM_GROUPS: tuple[tuple[str, ...], ...] = (
     # Pain descriptions
     ("headache", "head pain", "head ache", "cephalalgia"),
-    ("stomachache", "stomach ache", "tummy ache", "abdominal pain", "belly pain", "stomach pain"),
+    (
+        "stomachache",
+        "stomach ache",
+        "tummy ache",
+        "abdominal pain",
+        "belly pain",
+        "stomach pain",
+    ),
     ("backache", "back pain", "back ache", "lumbar pain"),
     ("chest pain", "chest tightness", "chest pressure", "chest discomfort"),
     ("sore throat", "throat pain", "throat hurts", "pharyngitis"),
@@ -25,16 +32,20 @@ SYNONYM_GROUPS: tuple[tuple[str, ...], ...] = (
     ("toothache", "tooth pain", "tooth ache", "dental pain"),
     ("muscle pain", "myalgia", "body aches", "muscle ache"),
     ("joint pain", "arthralgia", "joint ache", "joint stiffness"),
-
     # Respiratory
     ("cough", "coughing", "hacking cough"),
-    ("shortness of breath", "breathlessness", "dyspnea", "cant breathe", "difficulty breathing"),
+    (
+        "shortness of breath",
+        "breathlessness",
+        "dyspnea",
+        "cant breathe",
+        "difficulty breathing",
+    ),
     ("runny nose", "nasal discharge", "rhinorrhea", "nose running"),
     ("stuffy nose", "nasal congestion", "blocked nose", "congestion"),
     ("wheezing", "wheeze", "whistling breathing"),
     ("sneezing", "sneeze", "sneezing fits"),
     ("phlegm", "sputum", "mucus", "catarrh"),
-
     # Gastrointestinal
     ("nausea", "feeling sick", "nauseous", "queasy"),
     ("vomiting", "throwing up", "puking", "emesis"),
@@ -44,7 +55,6 @@ SYNONYM_GROUPS: tuple[tuple[str, ...], ...] = (
     ("bloating", "bloated", "abdominal bloating", "gassy", "gas"),
     ("stomach cramps", "abdominal cramps", "belly cramps"),
     ("indigestion", "dyspepsia", "upset stomach"),
-
     # Neurological
     ("dizziness", "dizzy", "lightheaded", "light headed", "vertigo", "room spinning"),
     ("fainting", "syncope", "passing out", "blacking out"),
@@ -52,7 +62,6 @@ SYNONYM_GROUPS: tuple[tuple[str, ...], ...] = (
     ("seizure", "convulsion", "fit", "epileptic fit"),
     ("confusion", "disorientation", "mental confusion", "brain fog"),
     ("insomnia", "cant sleep", "difficulty sleeping", "sleeplessness"),
-
     # Skin
     ("rash", "skin rash", "skin eruption", "dermatitis"),
     ("itching", "itchy", "pruritus", "scratching"),
@@ -60,11 +69,17 @@ SYNONYM_GROUPS: tuple[tuple[str, ...], ...] = (
     ("swelling", "edema", "oedema", "puffiness"),
     ("bruise", "bruising", "contusion", "black and blue"),
     ("pimples", "acne", "zits", "breakout", "spots"),
-
     # General / Systemic
     ("fever", "temperature", "pyrexia", "high temperature", "febrile"),
     ("chills", "shivering", "rigors"),
-    ("fatigue", "tiredness", "exhaustion", "feeling tired", "lethargy", "lack of energy"),
+    (
+        "fatigue",
+        "tiredness",
+        "exhaustion",
+        "feeling tired",
+        "lethargy",
+        "lack of energy",
+    ),
     ("weakness", "feeling weak", "asthenia"),
     ("weight loss", "losing weight", "unexplained weight loss"),
     ("weight gain", "gaining weight", "putting on weight"),
@@ -72,7 +87,6 @@ SYNONYM_GROUPS: tuple[tuple[str, ...], ...] = (
     ("sweating", "night sweats", "diaphoresis", "excessive sweating"),
     ("loss of appetite", "no appetite", "not hungry", "anorexia"),
     ("swollen lymph nodes", "swollen glands", "lymphadenopathy"),
-
     # Mental health
     ("anxiety", "anxious", "worried", "nervousness", "nervous"),
     ("depression", "depressed", "feeling hopeless", "feeling down", "sadness"),
@@ -80,22 +94,24 @@ SYNONYM_GROUPS: tuple[tuple[str, ...], ...] = (
     ("panic attack", "panic", "anxiety attack"),
     ("mood swings", "irritability", "mood changes"),
     ("crying", "tearful", "emotional"),
-
     # Eyes
     ("blurred vision", "blurry vision", "vision problems", "cant see clearly"),
     ("red eye", "pink eye", "eye redness", "bloodshot eyes"),
     ("watery eyes", "tearing", "lacrimation"),
-
     # Urinary
     ("burning urination", "painful urination", "dysuria", "burning pee"),
     ("frequent urination", "urinary frequency", "peeing a lot"),
     ("blood in urine", "hematuria", "bloody urine"),
-
     # Cardiovascular
-    ("palpitations", "heart racing", "heart pounding", "heart fluttering", "rapid heartbeat"),
+    (
+        "palpitations",
+        "heart racing",
+        "heart pounding",
+        "heart fluttering",
+        "rapid heartbeat",
+    ),
     ("high blood pressure", "hypertension", "elevated bp"),
     ("low blood pressure", "hypotension"),
-
     # ENT
     ("hearing loss", "cant hear", "hard of hearing", "deafness"),
     ("tinnitus", "ringing in ears", "ear ringing"),

@@ -14,17 +14,15 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 
 from app.core.rate_limiter import (
-    CHAT_RATE_LIMIT,
     RateLimitConfig,
     SlidingWindowRateLimiter,
 )
-from app.core.sanitizer import SanitizationResult, sanitize_input
+from app.core.sanitizer import sanitize_input
 from app.core.triage.engine import _fallback_response, _parse_llm_response
 from app.core.triage.red_flags import check_red_flags
 from app.main import app
 from app.rag.retriever import build_rag_context, retrieve
-from app.rag.vectorizer import MedicalVectorizer, get_vectorizer
-
+from app.rag.vectorizer import get_vectorizer
 
 # ═══════════════════════════════════════════════════════════════════════
 # RED FLAG EDGE CASES
@@ -123,13 +121,19 @@ class TestTriageEdgeCases:
         """Emoji-only input should get a clarification response."""
         result = _fallback_response("😭😷🤒")
         assert result["response"]
-        assert "describe" in result["response"].lower() or "symptom" in result["response"].lower()
+        assert (
+            "describe" in result["response"].lower()
+            or "symptom" in result["response"].lower()
+        )
 
     def test_fallback_greeting_input(self):
         """Greeting should not be triaged as medical."""
         result = _fallback_response("Hello, how are you?")
         # Should ask for more details, not triage
-        assert "describe" in result["response"].lower() or "symptom" in result["response"].lower()
+        assert (
+            "describe" in result["response"].lower()
+            or "symptom" in result["response"].lower()
+        )
 
     def test_fallback_number_only_input(self):
         """Pure numbers should get clarification."""
@@ -146,9 +150,10 @@ class TestTriageEdgeCases:
         ]
         for inp in test_inputs:
             result = _fallback_response(inp)
-            assert "disclaimer" in result["response"].lower() or "not medical advice" in result["response"].lower(), (
-                f"Missing disclaimer for input: {inp}"
-            )
+            assert (
+                "disclaimer" in result["response"].lower()
+                or "not medical advice" in result["response"].lower()
+            ), f"Missing disclaimer for input: {inp}"
 
     def test_parse_llm_response_malformed_json(self):
         """Malformed JSON should not crash the parser."""
@@ -162,13 +167,17 @@ class TestTriageEdgeCases:
 
     def test_parse_llm_response_valid_json_block(self):
         """Valid JSON in code block should be parsed correctly."""
-        content = '```json\n{"response": "You have a cold", "triage_level": "green"}\n```'
+        content = (
+            '```json\n{"response": "You have a cold", "triage_level": "green"}\n```'
+        )
         result = _parse_llm_response(content)
         assert result["response"] == "You have a cold"
 
     def test_parse_llm_response_nested_json(self):
         """Nested/complex JSON structures should not crash."""
-        content = '{"response": "test", "triage_level": "yellow", "extra": {"nested": true}}'
+        content = (
+            '{"response": "test", "triage_level": "yellow", "extra": {"nested": true}}'
+        )
         result = _parse_llm_response(content)
         assert result["response"] == "test"
 
@@ -423,6 +432,7 @@ class TestAPIEdgeCases:
     async def test_chat_without_auth_returns_401(self):
         """Chat endpoint without JWT should return 401."""
         from app.core.database import init_db
+
         try:
             await init_db()
             async with AsyncClient(
@@ -440,6 +450,7 @@ class TestAPIEdgeCases:
     async def test_register_missing_fields_returns_422(self):
         """Missing required fields should return 422 validation error."""
         from app.core.database import init_db
+
         try:
             await init_db()
             async with AsyncClient(
@@ -457,6 +468,7 @@ class TestAPIEdgeCases:
     async def test_login_invalid_credentials(self):
         """Wrong credentials should return 401."""
         from app.core.database import init_db
+
         try:
             await init_db()
             async with AsyncClient(

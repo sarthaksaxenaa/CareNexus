@@ -79,9 +79,14 @@ def test_fallback_vague_input():
     result = _fallback_response("I'm not feeling well")
     # RAG may match a condition or keyword fallback may ask for details
     assert result["triage_level"] in (
-        TriageLevel.NONE, TriageLevel.GREEN, TriageLevel.YELLOW,
+        TriageLevel.NONE,
+        TriageLevel.GREEN,
+        TriageLevel.YELLOW,
     )
-    assert "Disclaimer" in result["response"] or "not medical advice" in result["response"].lower()
+    assert (
+        "Disclaimer" in result["response"]
+        or "not medical advice" in result["response"].lower()
+    )
 
 
 def test_fallback_always_has_disclaimer():
