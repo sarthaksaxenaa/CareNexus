@@ -268,9 +268,21 @@ def _detect_severity(text: str) -> str:
 
 
 def _extract_body_parts(text: str) -> tuple[str, ...]:
-    """Extract mentioned body parts from the message."""
-    words = set(text.split())
-    return tuple(part for part in _BODY_PARTS if part in words)
+    """Extract mentioned body parts from the message.
+
+    Tokenises on letters, so surrounding punctuation ("chest.", "(left)") does
+    not hide a match, and accepts a simple plural ("knees" -> "knee"). Whole
+    tokens only: "headache" is a symptom, not the body part "head", and "this"
+    must not be read as "thi".
+    """
+    found: set[str] = set()
+    for word in re.findall(r"[a-z]+", text):
+        if word in _BODY_PARTS:
+            found.add(word)
+        elif word.endswith("s") and word[:-1] in _BODY_PARTS:
+            found.add(word[:-1])
+    # Sorted so the result is deterministic (frozenset iteration order is not).
+    return tuple(sorted(found))
 
 
 def _extract_negated(text: str) -> tuple[str, ...]:
