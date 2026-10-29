@@ -2,15 +2,12 @@
 
 from types import SimpleNamespace
 
-import pytest
 from httpx import AsyncClient
 
 from app.core import rate_limiter as rl
 from app.core.config import settings
 from app.core.rate_limiter import RateLimitConfig, SlidingWindowRateLimiter
 from tests.helpers import bearer, register
-
-pytestmark = pytest.mark.asyncio
 
 SPOOF = "X-Forwarded-For"
 

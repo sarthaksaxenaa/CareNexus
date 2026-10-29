@@ -1,12 +1,8 @@
 """Chat sessions are listed by latest activity, not creation time."""
 
-import pytest
 from httpx import AsyncClient
 
 from tests.helpers import bearer, register
-
-pytestmark = pytest.mark.asyncio
-
 
 # ─── Chat ordering ────────────────────────────────────────────────────────────
 
