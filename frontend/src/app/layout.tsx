@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+// Self-hosted fonts (npm, no Google request at build or run time).
+// Cormorant Garamond: editorial serif for display type. Jost: tracked sans for UI.
+import "@fontsource-variable/cormorant-garamond/wght.css";
+import "@fontsource-variable/cormorant-garamond/wght-italic.css";
+import "@fontsource-variable/jost/index.css";
 import "./globals.css";
-
-const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "CareNexus — AI Health Assistant",
@@ -33,7 +35,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="scroll-smooth">
-      <body className={`${inter.className} bg-void text-ink-2 antialiased`}>
+      <body className="font-sans bg-void text-ink-2 antialiased">
         {children}
       </body>
     </html>
