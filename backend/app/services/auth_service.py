@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 import bcrypt
-from jose import JWTError, jwt
+import jwt
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -68,7 +68,7 @@ def verify_token(token: str, token_type: str = "access") -> TokenPayload | None:
         if token_data.type != token_type:
             return None
         return token_data
-    except JWTError:
+    except jwt.PyJWTError:
         return None
 
 
