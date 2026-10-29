@@ -13,6 +13,9 @@ import { applyRegionToDraft, type RegionId } from "@/lib/bodyRegions";
 import { ALERT_ADVISORY, TRACKED } from "@/lib/styles";
 import { TRIAGE, TRIAGE_ORDER } from "@/lib/triage";
 
+// Mirrors MAX_MESSAGE_LENGTH in backend/app/schemas/chat.py.
+const MAX_MESSAGE_LENGTH = 2000;
+
 export default function ChatPage() {
   const router = useRouter();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -255,6 +258,7 @@ export default function ChatPage() {
                 ref={inputRef}
                 type="text"
                 aria-label="Describe your symptoms"
+                maxLength={MAX_MESSAGE_LENGTH}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={isAuthenticated ? "Describe your symptoms" : "Sign in to get an assessment"}

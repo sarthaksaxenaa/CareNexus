@@ -47,9 +47,13 @@ async def update_profile(
     profile: HealthProfile,
     **kwargs,
 ) -> HealthProfile:
-    """Update an existing health profile with provided fields."""
+    """Update the fields the client sent.
+
+    A field sent as null clears it; a field left out is kept. (Skipping
+    every None, as before, made it impossible to remove a condition.)
+    """
     for key, value in kwargs.items():
-        if value is not None and hasattr(profile, key):
+        if hasattr(profile, key):
             setattr(profile, key, value)
     await db.flush()
     await db.refresh(profile)

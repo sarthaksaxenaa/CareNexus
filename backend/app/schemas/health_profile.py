@@ -1,9 +1,12 @@
 """Pydantic schemas for health profile endpoints."""
 
 import uuid
-from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from app.schemas.common import UTCDateTime
+
+BLOOD_GROUPS = frozenset({"A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"})
 
 
 class HealthProfileCreateRequest(BaseModel):
@@ -20,14 +23,34 @@ class HealthProfileCreateRequest(BaseModel):
     )
     allergies: str | None = Field(None, max_length=2000, description="Known allergies")
 
+    @field_validator("blood_group", mode="before")
+    @classmethod
+    def _blood_group(cls, value: object) -> object:
+        if value is None:
+            return None
+        text = str(value).strip().upper().replace(" ", "")
+        if not text:
+            return None
+        if text not in BLOOD_GROUPS:
+            raise ValueError(
+                "Blood group must be one of " + ", ".join(sorted(BLOOD_GROUPS))
+            )
+        return text
 
-class HealthProfileUpdateRequest(BaseModel):
-    age: int | None = Field(None, ge=0, le=150)
-    gender: str | None = Field(None, max_length=20)
-    blood_group: str | None = Field(None, max_length=10)
-    known_conditions: str | None = Field(None, max_length=2000)
-    current_medications: str | None = Field(None, max_length=2000)
-    allergies: str | None = Field(None, max_length=2000)
+    @field_validator(
+        "gender", "known_conditions", "current_medications", "allergies", mode="before"
+    )
+    @classmethod
+    def _blank_is_none(cls, value: object) -> object:
+        if isinstance(value, str):
+            value = value.strip()
+            return value or None
+        return value
+
+
+class HealthProfileUpdateRequest(HealthProfileCreateRequest):
+    """Same fields and rules. On update, a field sent as null is cleared and
+    a field left out is kept (the route uses exclude_unset)."""
 
 
 class HealthProfileResponse(BaseModel):
@@ -41,5 +64,5 @@ class HealthProfileResponse(BaseModel):
     known_conditions: str | None
     current_medications: str | None
     allergies: str | None
-    created_at: datetime
-    updated_at: datetime
+    created_at: UTCDateTime
+    updated_at: UTCDateTime
