@@ -26,6 +26,7 @@ from app.services.chat_service import (
     get_session_messages,
     get_user_sessions,
 )
+from app.services.health_profile_service import get_profile
 
 router = APIRouter()
 
@@ -72,8 +73,17 @@ async def send_message(
     # Get conversation history for context
     history = await get_session_messages(db, session.id)
 
+    # Personalise triage with the caller's health profile (absent is normal).
+    profile = await get_profile(db, current_user.id)
+
     # Analyze symptoms and generate AI response
-    ai_result = await analyze_symptoms(clean_message, history)
+    ai_result = await analyze_symptoms(
+        clean_message,
+        history,
+        patient_age=profile.age if profile else None,
+        patient_gender=profile.gender if profile else None,
+        known_conditions=profile.known_conditions if profile else None,
+    )
 
     # Save assistant message
     assistant_msg = await add_message(

@@ -57,7 +57,9 @@ async def analyze_symptoms(
 
     # Step 4: Try LLM-based analysis
     try:
-        return await _llm_analyze(user_message, conversation_history)
+        return await _llm_analyze(
+            user_message, conversation_history, parsed, risk_factors
+        )
     except Exception as e:
         logger.warning("LLM analysis failed, using fallback: %s", e)
         return _fallback_response(user_message, parsed, risk_factors)
@@ -66,6 +68,8 @@ async def analyze_symptoms(
 async def _llm_analyze(
     user_message: str,
     conversation_history: list[Message] | None = None,
+    parsed: ParsedSymptoms | None = None,
+    risk_factors: list[str] | None = None,
 ) -> dict:
     """Generate AI response using LLM (OpenAI/Gemini) with RAG context."""
     from app.core.config import settings
@@ -89,10 +93,11 @@ async def _llm_analyze(
             )
 
     # Add current user message with RAG context
-    messages.append({
-        "role": "user",
-        "content": build_user_prompt(user_message, rag_context=rag_context),
-    })
+    user_prompt = build_user_prompt(user_message, rag_context=rag_context)
+    if risk_factors:
+        # Surface the patient's profile to the model so it can weigh severity.
+        user_prompt += "\n\nPatient risk factors: " + "; ".join(risk_factors)
+    messages.append({"role": "user", "content": user_prompt})
 
     if settings.LLM_PROVIDER == "openai" and settings.OPENAI_API_KEY:
         return await _call_openai(messages, settings)
@@ -100,7 +105,9 @@ async def _llm_analyze(
         return await _call_gemini(user_message, messages, settings)
     else:
         logger.info("No LLM API key configured, using rule-based fallback")
-        return _fallback_response(user_message)
+        # Forward parsed symptoms and risk factors; dropping them here silently
+        # disabled demographic escalation for every offline deployment.
+        return _fallback_response(user_message, parsed, risk_factors)
 
 
 async def _call_openai(messages: list[dict], settings) -> dict:
