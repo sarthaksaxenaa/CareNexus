@@ -38,7 +38,7 @@ jobs:
         with:
           python-version: "3.12"
           cache: "pip"
-      - run: pip install -r requirements.txt -r requirements-dev.txt --only-binary :all:
+      - run: "pip install -r requirements.txt -r requirements-dev.txt --only-binary :all:"
       - run: pytest --cov=app --cov-report=xml -v
         env:
           TESTING: "true"
