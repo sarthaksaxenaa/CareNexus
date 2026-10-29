@@ -1,7 +1,8 @@
 """Tests for custom exceptions and error handling."""
 
+import pytest_asyncio
 from fastapi import FastAPI
-from fastapi.testclient import TestClient
+from httpx import ASGITransport, AsyncClient
 
 from app.core.exceptions import (
     AuthenticationError,
@@ -41,12 +42,17 @@ def _create_test_app() -> FastAPI:
     return test_app
 
 
-client = TestClient(_create_test_app())
+@pytest_asyncio.fixture()
+async def client():
+    async with AsyncClient(
+        transport=ASGITransport(app=_create_test_app()), base_url="http://test"
+    ) as c:
+        yield c
 
 
-def test_base_error_returns_500():
+async def test_base_error_returns_500(client):
     """Base CareNexusError returns 500 with structured JSON."""
-    response = client.get("/error/base")
+    response = await client.get("/error/base")
     assert response.status_code == 500
     data = response.json()
     assert data["error"] == "CareNexusError"
@@ -54,31 +60,31 @@ def test_base_error_returns_500():
     assert "path" in data
 
 
-def test_auth_error_returns_401():
+async def test_auth_error_returns_401(client):
     """AuthenticationError returns 401."""
-    response = client.get("/error/auth")
+    response = await client.get("/error/auth")
     assert response.status_code == 401
     assert response.json()["error"] == "AuthenticationError"
 
 
-def test_forbidden_error_returns_403():
+async def test_forbidden_error_returns_403(client):
     """AuthorizationError returns 403."""
-    response = client.get("/error/forbidden")
+    response = await client.get("/error/forbidden")
     assert response.status_code == 403
     assert response.json()["error"] == "AuthorizationError"
 
 
-def test_not_found_returns_404():
+async def test_not_found_returns_404(client):
     """ResourceNotFoundError returns 404 with resource name."""
-    response = client.get("/error/not-found")
+    response = await client.get("/error/not-found")
     assert response.status_code == 404
     data = response.json()
     assert "User" in data["message"]
     assert "123" in data["message"]
 
 
-def test_rate_limit_returns_429():
+async def test_rate_limit_returns_429(client):
     """RateLimitError returns 429."""
-    response = client.get("/error/rate-limit")
+    response = await client.get("/error/rate-limit")
     assert response.status_code == 429
     assert "Rate limit" in response.json()["message"]
