@@ -21,19 +21,27 @@ export default function ChatSidebar({
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    if (api.isAuthenticated()) {
-      loadSessions();
-    }
-  }, [currentSessionId]);
+    if (!api.isAuthenticated()) return;
 
-  const loadSessions = async () => {
-    try {
-      const data = await api.getSessions();
-      setSessions(data);
-    } catch {
-      // silently fail — sidebar is non-critical
-    }
-  };
+    // Cancellation flag: if the user switches session (or the component
+    // unmounts) before the request resolves, drop the stale response instead
+    // of overwriting newer state or updating an unmounted component.
+    let cancelled = false;
+
+    const loadSessions = async () => {
+      try {
+        const data = await api.getSessions();
+        if (!cancelled) setSessions(data);
+      } catch {
+        // silently fail — sidebar is non-critical
+      }
+    };
+
+    loadSessions();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentSessionId]);
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);

@@ -19,6 +19,9 @@ export default function Navbar() {
   const [userName, setUserName] = useState("");
 
   useEffect(() => {
+    // localStorage is unavailable during SSR, so auth state is read after
+    // mount to keep the server HTML and the first client render identical.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsAuth(api.isAuthenticated());
     if (typeof window !== "undefined") {
       try {
