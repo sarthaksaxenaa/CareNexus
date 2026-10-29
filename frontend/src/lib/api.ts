@@ -1,5 +1,7 @@
 /** API client for CareNexus backend */
 
+import { NETWORK_ERROR, errorMessage } from "./errors";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 interface AuthResponse {
@@ -75,7 +77,7 @@ export class ApiClient {
     return this.parse<T>(response);
   }
 
-  private send(endpoint: string, options: RequestInit): Promise<Response> {
+  private async send(endpoint: string, options: RequestInit): Promise<Response> {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
       ...((options.headers as Record<string, string>) || {}),
@@ -83,13 +85,18 @@ export class ApiClient {
     if (this.accessToken) {
       headers["Authorization"] = `Bearer ${this.accessToken}`;
     }
-    return fetch(`${API_URL}${endpoint}`, { ...options, headers });
+    try {
+      return await fetch(`${API_URL}${endpoint}`, { ...options, headers });
+    } catch {
+      // fetch only rejects when no response arrived (server down, offline, CORS).
+      throw new Error(NETWORK_ERROR);
+    }
   }
 
   private async parse<T>(response: Response): Promise<T> {
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: "Request failed" }));
-      throw new Error(error.detail || `HTTP ${response.status}`);
+      const body = await response.json().catch(() => null);
+      throw new Error(errorMessage(response.status, body));
     }
     // 204 No Content — no body to parse (e.g. DELETE responses)
     if (response.status === 204) {
