@@ -1,6 +1,8 @@
 # ─── Core Framework ───────────────────────────
-fastapi==0.115.0
-uvicorn[standard]==0.30.6
+fastapi==0.143.2
+# Pinned explicitly: FastAPI allows any starlette>=0.46; older ones carry advisories.
+starlette==1.8.0
+uvicorn[standard]==0.54.0
 pydantic==2.9.2
 pydantic-settings==2.5.2
 
@@ -20,13 +22,13 @@ email-validator==2.2.0
 
 # ─── Authentication ───────────────────────────
 bcrypt==4.2.0
-PyJWT==2.10.1
+PyJWT==2.15.1
 
 # ─── AI / LLM (optional: the app falls back to the offline RAG engine) ────
 openai==1.50.2
 google-genai>=1.0.0,<2
 
 # ─── Utilities ────────────────────────────────
-python-dotenv==1.0.1
-python-multipart==0.0.12
+python-dotenv==1.2.4
+python-multipart==0.0.32
 httpx==0.27.2
