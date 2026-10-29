@@ -1,0 +1,25 @@
+{
+  "updated": "2026-10-29T20:03:52.853Z",
+  "tests": {
+    "total": 421,
+    "failing": 0,
+    "backend": 361,
+    "unit": 34,
+    "e2e": 26
+  },
+  "coverage": 0.9229,
+  "retrieval": {
+    "labelled": {
+      "n": 43,
+      "top1": 0.8604651162790697,
+      "top3": 1
+    },
+    "heldout": {
+      "n": 15,
+      "top1": 0.9333333333333333,
+      "top3": 1
+    }
+  },
+  "conditions": 49,
+  "vulnerabilities": 0
+}
