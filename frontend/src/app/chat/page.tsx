@@ -8,6 +8,8 @@ import ChatSidebar from "@/components/ChatSidebar";
 import MessageBubble from "@/components/MessageBubble";
 import QuickActions from "@/components/QuickActions";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import BodyMapPanel from "@/components/BodyMapPanel";
+import { applyRegionToDraft, type RegionId } from "@/lib/bodyRegions";
 import { ALERT_ADVISORY } from "@/lib/styles";
 
 export default function ChatPage() {
@@ -30,6 +32,8 @@ export default function ChatPage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(true);
+  const [showMap, setShowMap] = useState(false);
+  const [selectedRegion, setSelectedRegion] = useState<RegionId | null>(null);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -57,6 +61,7 @@ export default function ChatPage() {
 
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
+    setSelectedRegion(null);
     setIsLoading(true);
     inputRef.current?.focus();
 
@@ -101,8 +106,17 @@ export default function ChatPage() {
     }
   };
 
+  /** A body-map click seeds the draft; the user keeps typing the symptom. */
+  const handleRegionSelect = (region: RegionId) => {
+    setSelectedRegion(region);
+    setShowQuickActions(false);
+    setInput((draft) => applyRegionToDraft(draft, region));
+    inputRef.current?.focus();
+  };
+
   const handleNewChat = () => {
     setSessionId(null);
+    setSelectedRegion(null);
     setShowQuickActions(true);
     setMessages([
       {
@@ -156,6 +170,18 @@ export default function ChatPage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setShowMap((open) => !open)}
+                aria-pressed={showMap}
+                className={`text-xs px-3 py-1.5 rounded-lg border transition-colors duration-200 ${
+                  showMap
+                    ? "border-amethyst-400 bg-amethyst/30 text-amethyst-200"
+                    : "border-edge text-ink-3 hover:border-amethyst-600 hover:text-ink-2"
+                }`}
+              >
+                🫀 Body map
+              </button>
               <span className={`${ALERT_ADVISORY} hidden sm:inline`}>
                 ⚕️ Not medical advice
               </span>
@@ -235,6 +261,16 @@ export default function ChatPage() {
             </div>
           </div>
         </div>
+
+        {/* Body map: overlay on small screens, docked panel on large ones */}
+        {showMap && (
+          <aside
+            aria-label="Body map panel"
+            className="fixed inset-y-0 right-0 z-40 w-80 border-l border-edge bg-surface-2 shadow-2xl shadow-black/60 lg:static lg:z-auto lg:shadow-none"
+          >
+            <BodyMapPanel selected={selectedRegion} onSelect={handleRegionSelect} />
+          </aside>
+        )}
       </div>
     </ErrorBoundary>
   );
