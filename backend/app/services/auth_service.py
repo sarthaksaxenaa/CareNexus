@@ -75,9 +75,22 @@ def verify_token(token: str, token_type: str = "access") -> TokenPayload | None:
 # ─── User Database Operations ───────────────────────
 
 
+def normalize_email(email: str) -> str:
+    """Canonical form used for storage and lookup, so case never creates duplicates."""
+    return email.strip().lower()
+
+
+def parse_user_id(sub: str) -> uuid.UUID | None:
+    """Turn a token subject into a user id, or None if it is not a UUID."""
+    try:
+        return uuid.UUID(sub)
+    except ValueError:
+        return None
+
+
 async def get_user_by_email(db: AsyncSession, email: str) -> User | None:
-    """Fetch a user by their email address."""
-    result = await db.execute(select(User).where(User.email == email))
+    """Fetch a user by their email address (case-insensitive)."""
+    result = await db.execute(select(User).where(User.email == normalize_email(email)))
     return result.scalar_one_or_none()
 
 
@@ -92,7 +105,7 @@ async def create_user(
 ) -> User:
     """Create a new user with hashed password."""
     user = User(
-        email=email.lower().strip(),
+        email=normalize_email(email),
         hashed_password=hash_password(password),
         full_name=full_name.strip(),
     )
@@ -104,7 +117,7 @@ async def create_user(
 
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> User | None:
     """Authenticate a user by email and password. Returns user if valid, None if invalid."""
-    user = await get_user_by_email(db, email.lower().strip())
+    user = await get_user_by_email(db, email)
     if not user:
         return None
     if not verify_password(password, user.hashed_password):
