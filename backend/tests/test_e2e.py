@@ -831,7 +831,7 @@ class TestMiddleware:
         assert resp.status_code == 200
         assert resp.headers.get("X-Content-Type-Options") == "nosniff"
         assert resp.headers.get("X-Frame-Options") == "DENY"
-        assert resp.headers.get("X-XSS-Protection") == "1; mode=block"
+        assert resp.headers.get("X-XSS-Protection") == "0"
         assert resp.headers.get("Cache-Control") == "no-store"
 
     @pytest.mark.asyncio
