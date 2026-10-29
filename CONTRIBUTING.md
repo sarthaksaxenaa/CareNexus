@@ -1,59 +1,41 @@
 # Contributing to CareNexus
 
-Thank you for your interest in contributing to CareNexus! 🏥
-
-## Development Setup
-
-### Prerequisites
-- Python 3.11+
-- Node.js 20+
-- Docker & Docker Compose (optional but recommended)
-- Git
-
-### Quick Start
+## Setup
 
 ```bash
-# Clone the repo
 git clone https://github.com/sarthaksaxenaa/CareNexus.git
 cd CareNexus
+python run.py
+```
 
-# Option 1: Docker (recommended)
-docker compose up -d
+`run.py` creates `backend/venv`, installs dependencies and starts both servers. For tests and tooling, install the dev requirements too:
 
-# Option 2: Manual
-# Backend
+```bash
 cd backend
-python -m venv venv
-venv\Scripts\activate  # Windows
-pip install -r requirements-dev.txt
-uvicorn app.main:app --reload
+venv/bin/pip install -r requirements-dev.txt     # Windows: venv\Scripts\pip
+```
 
-# Frontend (new terminal)
+## Before you push
+
+All of these run in CI and must pass:
+
+```bash
+# backend
+cd backend
+ruff check . && ruff format --check .
+pytest                                  # coverage floor 90%
+python -m scripts.eval_retrieval        # retrieval accuracy
+
+# frontend
 cd frontend
-npm install
-npm run dev
+npm run lint && npx tsc --noEmit && npm test
+npm run build && npm run e2e            # E2E_PYTHON=<python with backend deps>
 ```
 
-## Git Workflow
+## Conventions
 
-1. Create a feature branch from `develop`: `git checkout -b feature/your-feature develop`
-2. Make your changes with meaningful commits following [Conventional Commits](https://www.conventionalcommits.org/)
-3. Push and create a Pull Request to `develop`
-4. Wait for CI to pass and request review
-
-## Commit Messages
-
-We use Conventional Commits:
-
-```
-feat(scope): add new feature
-fix(scope): fix a bug
-docs(scope): update documentation
-test(scope): add or fix tests
-chore(scope): maintenance tasks
-```
-
-## Code Style
-
-- **Python**: Formatted with Ruff, type-checked with mypy
-- **TypeScript**: Formatted with Prettier, linted with ESLint
+- **Commits:** [Conventional Commits](https://www.conventionalcommits.org/) (`feat`, `fix`, `refactor`, `test`, `docs`, `ci`, `build`, `chore`), one logical change per commit.
+- **Tests first** for bug fixes: a failing test that reproduces the bug, then the fix.
+- **Dependencies:** pin exact versions and prefer releases at least two weeks old. For npm, `npm install --before=<date>` applies that to the whole tree.
+- **Retrieval changes:** run `python -m scripts.eval_retrieval` before and after; never tune against the held-out set.
+- **Python** is formatted and linted with Ruff; **TypeScript** with ESLint.

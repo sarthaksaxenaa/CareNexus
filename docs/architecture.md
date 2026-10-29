@@ -1,120 +1,88 @@
-# CareNexus — System Architecture
+# CareNexus — Architecture
 
 ## Overview
-CareNexus follows a modular, layered architecture designed for scalability, maintainability, and deployment flexibility.
 
-## Architecture Diagram
+Two applications and one database:
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        CLIENT LAYER                             │
-│  ┌─────────────┐  ┌──────────────┐  ┌───────────────────────┐  │
-│  │  Landing     │  │  Auth Pages  │  │  Chat Interface       │  │
-│  │  Page        │  │  Login/Reg   │  │  + Triage Badges      │  │
-│  └─────────────┘  └──────────────┘  └───────────────────────┘  │
-│                    Next.js 14 (App Router)                      │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │ HTTPS / REST
-┌──────────────────────────▼──────────────────────────────────────┐
-│                     API GATEWAY LAYER                           │
-│  ┌────────────────────────────────────────────────────────────┐ │
-│  │  FastAPI Application                                       │ │
-│  │  ├── CORS Middleware                                       │ │
-│  │  ├── Request Logging Middleware (X-Request-ID, timing)     │ │
-│  │  ├── Security Headers Middleware (XSS, CSRF, clickjack)   │ │
-│  │  └── Global Exception Handlers                            │ │
-│  └────────────────────────────────────────────────────────────┘ │
-│  ┌──────────┐ ┌──────────┐ ┌───────────────┐ ┌──────────────┐ │
-│  │ /auth/*  │ │ /chat/*  │ │/health-profile│ │  /health     │ │
-│  │ register │ │ message  │ │ CRUD          │ │  check       │ │
-│  │ login    │ │ sessions │ │               │ │              │ │
-│  │ me       │ │ history  │ │               │ │              │ │
-│  │ refresh  │ │          │ │               │ │              │ │
-│  └──────────┘ └──────────┘ └───────────────┘ └──────────────┘ │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │
-┌──────────────────────────▼──────────────────────────────────────┐
-│                    SERVICE LAYER                                │
-│  ┌────────────┐ ┌──────────────┐ ┌────────────────────────────┐│
-│  │ Auth       │ │ Chat         │ │ Health Profile             ││
-│  │ Service    │ │ Service      │ │ Service                    ││
-│  │ ─ bcrypt   │ │ ─ sessions   │ │ ─ CRUD                    ││
-│  │ ─ JWT      │ │ ─ messages   │ │ ─ medical data            ││
-│  └────────────┘ └──────┬───────┘ └────────────────────────────┘│
-│                        │                                        │
-│  ┌─────────────────────▼──────────────────────────────────────┐│
-│  │              TRIAGE ENGINE                                  ││
-│  │  ┌────────────────┐  ┌────────────────┐  ┌──────────────┐  ││
-│  │  │ Red Flag       │  │ LLM Analyzer   │  │ Rule-based   │  ││
-│  │  │ Detector       │  │ (OpenAI/Gemini)│  │ Fallback     │  ││
-│  │  │ 6 emergency    │  │ Structured JSON│  │ Keyword      │  ││
-│  │  │ categories     │  │ response parse │  │ triage       │  ││
-│  │  └────────────────┘  └────────────────┘  └──────────────┘  ││
-│  └────────────────────────────────────────────────────────────┘│
-└──────────────────────────┬──────────────────────────────────────┘
-                           │
-┌──────────────────────────▼──────────────────────────────────────┐
-│                     DATA LAYER                                  │
-│  ┌──────────────┐  ┌──────────────┐  ┌───────────────────────┐ │
-│  │ PostgreSQL   │  │ Redis        │  │ ChromaDB (planned)    │ │
-│  │ ─ Users      │  │ ─ Caching    │  │ ─ Medical knowledge   │ │
-│  │ ─ Sessions   │  │ ─ Rate limit │  │ ─ Vector embeddings   │ │
-│  │ ─ Messages   │  │ ─ Sessions   │  │ ─ RAG retrieval       │ │
-│  │ ─ Profiles   │  │              │  │                       │ │
-│  └──────────────┘  └──────────────┘  └───────────────────────┘ │
-└─────────────────────────────────────────────────────────────────┘
+ Browser
+   │  Next.js 16 app (React 19, server-rendered shell, client pages)
+   │  JWT in localStorage; silent refresh on 401
+   ▼
+ FastAPI service ── /api/v1/{auth, chat, health-profile, analytics}
+   │   middleware: CORS → request logging (X-Request-ID, timing) → security headers
+   │   per-route: auth dependency, rate limiter, input sanitiser
+   ▼
+ Services (auth, chat, profile, analytics, LLM)  ──►  Triage engine  ──►  RAG retriever
+   │                                                       │                 │
+   ▼                                                       ▼                 ▼
+ SQLAlchemy 2 (async) ── SQLite file / PostgreSQL      emergency rules   TF-IDF index over
+   users, health_profiles, chat_sessions, messages      symptom parser    49 conditions
+   foreign keys + ON DELETE CASCADE enforced            optional Gemini   (in memory)
 ```
 
-## Components
+The backend is layered: **routes** validate input and handle HTTP, **services** hold business logic, **models** map tables. Routes never touch SQL directly.
 
-### Frontend (Next.js 14)
-- Server-side rendered React application with App Router
-- **Pages**: Landing, Login, Register, Chat, Health Profile, About
-- Chat interface with real-time triage badges (🟢🟡🔴)
-- TypeScript API client with JWT token management
+## Request flow: one chat message
 
-### Backend API (FastAPI)
-- RESTful API with JWT authentication (bcrypt + python-jose)
-- Request validation with Pydantic V2
-- Async request handling with uvicorn + asyncpg
-- Structured logging with correlation IDs
-- Security headers middleware (XSS, CSRF, clickjacking protection)
-- Global exception handling with structured JSON error responses
+1. `POST /api/v1/chat/message` with a Bearer access token.
+2. `get_current_user` verifies the JWT (type `access`), loads the user, rejects inactive accounts.
+3. Rate limiter: 10 messages per minute **per user** (per-IP limits would make everyone behind one campus NAT share a quota).
+4. Sanitiser strips HTML and refuses 12 prompt-injection patterns (400 with a reason).
+5. The session is loaded (must belong to the caller, else 404) or created; the user message is stored and the session's `updated_at` bumped.
+6. The caller's health profile supplies age, sex and known conditions.
+7. `analyze_symptoms`:
+   - **Emergency rules** run first; a match returns `red` immediately.
+   - The **symptom parser** extracts body parts, duration and severity words.
+   - **Risk factors** come from the profile.
+   - The **retriever** returns the three closest conditions.
+   - With `GEMINI_API_KEY`, the LLM writes the reply grounded in those conditions; on any LLM error, or with no key, the **offline engine** builds it from the top match, adjusting the level for duration, number of matched symptoms and risk factors.
+8. The assistant message is stored with its level and sources; both messages are returned with UTC timestamps.
 
-### Triage Engine
-- **Red-Flag Detection**: 6 emergency categories (cardiac, breathing, stroke, mental health, seizure, bleeding)
-- **LLM Integration**: OpenAI GPT and Google Gemini with structured JSON responses
-- **Rule-based Fallback**: Keyword-based triage when no API keys configured
-- **Medical System Prompt**: Strict guidelines preventing diagnosis and prescription
+## Retrieval
 
-### Data Layer
-- **PostgreSQL**: Users, health profiles, chat sessions, messages (SQLAlchemy 2.0 async ORM)
-- **Redis** (planned): Caching, rate limiting, session management
-- **ChromaDB** (planned): Medical knowledge vector embeddings for RAG
+Dependency-free TF-IDF with cosine similarity, built in memory at start-up (sub-millisecond queries).
 
-## Data Flow
-1. User sends symptom description via chat UI
-2. Frontend sends POST to `/api/v1/chat/message` with JWT Bearer token
-3. Backend validates auth, creates/retrieves session
-4. Triage engine checks for red-flag emergencies first
-5. If no red flag: LLM analyzes symptoms (or fallback if no API key)
-6. Response parsed for triage level (green/yellow/red/none)
-7. Both user message and AI response persisted to database
-8. Response returned with severity badge, sources, and medical disclaimer
+- **Indexed fields** describe the patient's experience only: name and aliases (weight 3), symptoms (2), description and red flags (1). Advice text such as "go to the emergency room" is excluded; indexing it made everyday words match the wrong condition.
+- **Normalisation:** lower-casing, stop words (including conversational filler), light suffix stemming applied identically to index and query.
+- **Synonyms** map colloquial phrases to clinical terms ("throwing up" → vomiting, "room spins" → vertigo) before stemming.
+- **Quality gate:** `backend/tests/data/retrieval_eval.json` (43 queries) and `retrieval_heldout.json` (15 queries written before tuning). CI requires ≥ 85% / ≥ 90% correct first results and 100% in the top three.
 
-## API Endpoints
+## Authentication
 
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| POST | `/api/v1/auth/register` | Create account | ❌ |
-| POST | `/api/v1/auth/login` | Login | ❌ |
-| GET | `/api/v1/auth/me` | Current user | ✅ |
-| POST | `/api/v1/auth/refresh` | Refresh token | ❌ |
-| POST | `/api/v1/chat/message` | Send message | ✅ |
-| GET | `/api/v1/chat/sessions` | List sessions | ✅ |
-| GET | `/api/v1/chat/sessions/{id}/messages` | Session history | ✅ |
-| GET | `/api/v1/health-profile/` | Get profile | ✅ |
-| POST | `/api/v1/health-profile/` | Create profile | ✅ |
-| PUT | `/api/v1/health-profile/` | Update profile | ✅ |
-| DELETE | `/api/v1/health-profile/` | Delete profile | ✅ |
-| GET | `/health` | Health check | ❌ |
+- Passwords: SHA-256 pre-hash, then bcrypt (`sha256$` prefix). Plain-bcrypt hashes from earlier versions still verify and are re-hashed at the next successful login.
+- Access token 30 minutes, refresh token 7 days, HS256. Each carries a `type` claim so one can never be used as the other.
+- `POST /auth/refresh` takes the refresh token in the JSON body (never the URL), is rate-limited, and re-checks that the user exists and is active.
+- The frontend refreshes once on any 401 (shared by concurrent requests) and replays the request; if that fails it clears the session and goes to `/login`.
+
+## Data model
+
+| Table | Key columns | Notes |
+|---|---|---|
+| `users` | id (UUID), email (unique, stored lower-case), hashed_password, is_active | |
+| `health_profiles` | user_id → users (CASCADE) | blood group validated against the eight groups |
+| `chat_sessions` | user_id → users (CASCADE), title, updated_at | `updated_at` = latest message, used for ordering |
+| `messages` | session_id → chat_sessions (CASCADE), role, content, triage_level, sources | |
+
+Timestamps are stored as naive UTC and serialised with an explicit offset. Tables are created at start-up (`create_all`); there are no migrations yet, so schema changes require a fresh database.
+
+## Frontend
+
+- App Router pages: `/`, `/chat`, `/dashboard`, `/profile`, `/about`, `/login`, `/register`, plus a themed 404.
+- Design tokens live in `src/app/globals.css` (`@theme`); shared class strings in `src/lib/styles.ts`; triage colours and labels in `src/lib/triage.ts`. Fonts (Cormorant Garamond, Jost) are self-hosted npm packages, so builds work offline.
+- The 3D body map is lazy-loaded (`next/dynamic`, `ssr: false`) and falls back to an accessible list when WebGL is missing, the GPU context is lost, or reduced motion is preferred.
+- Browser-only state (auth) is read after mount to keep server and client HTML identical.
+
+## Configuration
+
+All settings come from environment variables (`backend/.env`), with safe defaults for local use: SQLite, no LLM, development secret. With `ENVIRONMENT=production` the app refuses to start unless `SECRET_KEY` is set to a unique 32+ character value. `TRUST_PROXY_HEADERS` must only be enabled behind a reverse proxy that sets `X-Forwarded-For`.
+
+## Testing and delivery
+
+| Layer | Tooling | Scope |
+|---|---|---|
+| Backend | pytest (async), in-memory SQLite | units, API contracts, security, edge cases, DB integrity, retrieval quality |
+| Frontend | Vitest | API client (refresh, errors), time parsing, body-map logic |
+| End to end | Playwright | production build + real API + SQLite in Chromium |
+
+GitHub Actions runs every layer plus `pip-audit` and `npm audit` on each push; Dependabot proposes weekly dependency updates that must pass the same pipeline. Docker images: Python 3.12 slim (non-root, SQLite in a volume) and a Next.js standalone server.
