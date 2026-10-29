@@ -2,14 +2,17 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { useState, useEffect } from "react";
-import { WORDMARK_ACCENT } from "@/lib/styles";
+import { TRACKED } from "@/lib/styles";
+import Wordmark from "./Wordmark";
 
 const NAV_LINKS = [
-  { href: "/chat", label: "Chat", icon: "💬" },
-  { href: "/dashboard", label: "Dashboard", icon: "📊" },
-  { href: "/profile", label: "Profile", icon: "👤" },
+  { href: "/", label: "Home" },
+  { href: "/chat", label: "Check symptoms" },
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/profile", label: "Profile" },
+  { href: "/about", label: "About" },
 ];
 
 export default function Navbar() {
@@ -23,13 +26,11 @@ export default function Navbar() {
     // mount to keep the server HTML and the first client render identical.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsAuth(api.isAuthenticated());
-    if (typeof window !== "undefined") {
-      try {
-        const user = JSON.parse(localStorage.getItem("user") || "{}");
-        setUserName(user.full_name || "");
-      } catch {
-        /* ignore */
-      }
+    try {
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      setUserName(user.full_name || "");
+    } catch {
+      /* ignore */
     }
   }, []);
 
@@ -39,98 +40,94 @@ export default function Navbar() {
     router.push("/");
   };
 
-  // Don't show navbar on login/register pages
+  // Login and register have their own minimal chrome.
   if (["/login", "/register"].includes(pathname)) return null;
 
-  return (
-    <nav
-      aria-label="Main navigation"
-      className="sticky top-0 z-50 flex items-center justify-between px-6 py-3 bg-void/85 backdrop-blur-xl border-b border-edge"
-    >
-      {/* Logo */}
-      <Link href="/" className="flex items-center gap-2.5 group">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amethyst to-amethyst-400 flex items-center justify-center text-sm shadow-lg shadow-amethyst/40 group-hover:shadow-amethyst-400/50 transition-shadow duration-300">
-          🏥
-        </div>
-        <span className="text-lg font-bold text-ink tracking-tight">
-          Care<span className={WORDMARK_ACCENT}>Nexus</span>
-        </span>
-      </Link>
+  const linkClass = (active: boolean) =>
+    `${TRACKED} whitespace-nowrap py-1 border-b transition-colors duration-200 ${
+      active
+        ? "text-ink border-amethyst-200/70"
+        : "text-ink-4 border-transparent hover:text-ink-2"
+    }`;
 
-      {/* Center Nav Links */}
-      <div className="hidden sm:flex items-center gap-1">
+  return (
+    <header className="sticky top-0 z-50 bg-void/85 backdrop-blur-xl border-b border-edge-soft">
+      <nav
+        aria-label="Main navigation"
+        className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-5 sm:px-8 h-16"
+      >
+        <Link href="/" aria-label="CareNexus home" className="shrink-0">
+          <Wordmark className="text-[1.65rem]" />
+        </Link>
+
+        <ul className="hidden md:flex items-center gap-8">
+          {NAV_LINKS.map((link) => {
+            const active = pathname === link.href;
+            return (
+              <li key={link.href}>
+                <Link
+                  href={link.href}
+                  aria-current={active ? "page" : undefined}
+                  className={linkClass(active)}
+                >
+                  {link.label}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+
+        <div className="flex items-center gap-5 shrink-0">
+          {isAuth ? (
+            <>
+              {userName && (
+                <span className="hidden lg:inline text-sm font-light text-ink-3">
+                  {userName}
+                </span>
+              )}
+              <button
+                onClick={handleLogout}
+                className={`${TRACKED} text-ink-4 hover:text-ink transition-colors duration-200`}
+              >
+                Log out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className={`${TRACKED} text-ink-4 hover:text-ink transition-colors duration-200`}
+              >
+                Sign in
+              </Link>
+              <Link
+                href="/register"
+                className={`${TRACKED} rounded-full border border-edge px-4 py-2 text-ink-2 hover:border-amethyst-200/60 hover:text-ink transition-colors duration-200`}
+              >
+                Register
+              </Link>
+            </>
+          )}
+        </div>
+      </nav>
+
+      {/* Small screens: the same links as a scrollable row. */}
+      <ul className="md:hidden flex gap-6 overflow-x-auto px-5 pb-3 -mt-1">
         {NAV_LINKS.map((link) => {
-          const isActive = pathname === link.href;
+          const active = pathname === link.href;
           return (
-            <Link
-              key={link.href}
-              href={link.href}
-              aria-current={isActive ? "page" : undefined}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                isActive
-                  ? "bg-amethyst/25 text-amethyst-200 ring-1 ring-amethyst-600/50"
-                  : "text-ink-4 hover:bg-surface-2 hover:text-ink-2"
-              }`}
-            >
-              <span className="text-base">{link.icon}</span>
-              {link.label}
-            </Link>
+            <li key={link.href}>
+              <Link
+                href={link.href}
+                aria-current={active ? "page" : undefined}
+                className={linkClass(active)}
+              >
+                {link.label}
+              </Link>
+            </li>
           );
         })}
-      </div>
-
-      {/* Right Section */}
-      <div className="flex items-center gap-3">
-        {isAuth ? (
-          <>
-            {userName && (
-              <span className="hidden md:inline text-xs text-ink-4">
-                {userName}
-              </span>
-            )}
-            <button
-              onClick={handleLogout}
-              className="text-xs text-ink-4 hover:text-triage-red px-3 py-1.5 rounded-lg hover:bg-triage-red/10 transition-colors duration-200"
-            >
-              Logout
-            </button>
-          </>
-        ) : (
-          <div className="flex items-center gap-2">
-            <Link
-              href="/login"
-              className="text-xs text-ink-4 hover:text-amethyst-200 px-3 py-1.5 rounded-lg hover:bg-surface-2 transition-colors duration-200"
-            >
-              Sign in
-            </Link>
-            <Link
-              href="/register"
-              className="text-xs font-medium text-white px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-amethyst to-amethyst-500 hover:from-amethyst-600 hover:to-amethyst-400 shadow-md shadow-amethyst/30 transition-all duration-200"
-            >
-              Register
-            </Link>
-          </div>
-        )}
-
-        {/* Mobile menu */}
-        <div className="sm:hidden flex items-center gap-1">
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              aria-label={link.label}
-              className={`p-2 rounded-lg text-base transition-colors duration-200 ${
-                pathname === link.href
-                  ? "bg-amethyst/25 ring-1 ring-amethyst-600/50"
-                  : "hover:bg-surface-2"
-              }`}
-              title={link.label}
-            >
-              {link.icon}
-            </Link>
-          ))}
-        </div>
-      </div>
-    </nav>
+      </ul>
+    </header>
   );
 }
