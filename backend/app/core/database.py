@@ -1,6 +1,12 @@
 """Database engine, session factory, and base model for CareNexus."""
 
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy import event
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 from sqlalchemy.orm import DeclarativeBase
 
 from app.core.config import settings
@@ -33,6 +39,26 @@ engine = create_async_engine(
     # SQLite needs this for async writes
     **({} if not _is_sqlite else {"connect_args": {"check_same_thread": False}}),
 )
+
+
+def enable_sqlite_foreign_keys(async_engine: AsyncEngine) -> None:
+    """Make SQLite enforce FOREIGN KEY and ON DELETE CASCADE.
+
+    SQLite ships with foreign keys switched off per connection, so without
+    this a message could point at a missing session and deleting a user
+    left their data behind. PostgreSQL always enforces them.
+    """
+    if async_engine.dialect.name != "sqlite":
+        return
+
+    @event.listens_for(async_engine.sync_engine, "connect")
+    def _on_connect(dbapi_connection, _record) -> None:
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
+
+
+enable_sqlite_foreign_keys(engine)
 
 async_session_factory = async_sessionmaker(
     engine, class_=AsyncSession, expire_on_commit=False
