@@ -45,3 +45,8 @@ next-env.d.ts
 /test-results/
 /playwright-report/
 /playwright/.cache/
+
+# Reports written by the README assets workflow
+/vitest-report.json
+/e2e-report.json
+/npm-audit.json
