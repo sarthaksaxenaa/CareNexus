@@ -26,7 +26,7 @@ PyJWT==2.15.1
 
 # ─── AI / LLM (optional: the app falls back to the offline RAG engine) ────
 openai==1.50.2
-google-genai>=1.0.0,<2
+google-genai>=2.33.0,<3
 
 # ─── Utilities ────────────────────────────────
 python-dotenv==1.2.4
