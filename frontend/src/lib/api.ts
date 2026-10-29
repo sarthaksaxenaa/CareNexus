@@ -43,8 +43,13 @@ interface ChatSessionInfo {
   is_active: boolean;
 }
 
-class ApiClient {
+/** Endpoints where a 401 means "wrong credentials", not "your session expired". */
+const AUTH_ENDPOINTS = ["/api/v1/auth/login", "/api/v1/auth/register", "/api/v1/auth/refresh"];
+
+export class ApiClient {
   private accessToken: string | null = null;
+  /** In-flight refresh, shared so concurrent 401s trigger a single refresh call. */
+  private refreshing: Promise<boolean> | null = null;
 
   constructor() {
     if (typeof window !== "undefined") {
@@ -53,31 +58,77 @@ class ApiClient {
   }
 
   async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const response = await this.send(endpoint, options);
+
+    if (response.status === 401 && !AUTH_ENDPOINTS.includes(endpoint)) {
+      // The access token expired (or is invalid). Try to renew it once, then replay.
+      if (await this.refreshSession()) {
+        return this.parse<T>(await this.send(endpoint, options));
+      }
+      this.logout();
+      this.redirectToLogin();
+      throw new Error("Session expired. Please log in again.");
+    }
+
+    return this.parse<T>(response);
+  }
+
+  private send(endpoint: string, options: RequestInit): Promise<Response> {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
       ...((options.headers as Record<string, string>) || {}),
     };
-
     if (this.accessToken) {
       headers["Authorization"] = `Bearer ${this.accessToken}`;
     }
+    return fetch(`${API_URL}${endpoint}`, { ...options, headers });
+  }
 
-    const response = await fetch(`${API_URL}${endpoint}`, {
-      ...options,
-      headers,
-    });
-
+  private async parse<T>(response: Response): Promise<T> {
     if (!response.ok) {
       const error = await response.json().catch(() => ({ detail: "Request failed" }));
       throw new Error(error.detail || `HTTP ${response.status}`);
     }
-
     // 204 No Content — no body to parse (e.g. DELETE responses)
     if (response.status === 204) {
       return null as T;
     }
-
     return response.json();
+  }
+
+  /** Exchange the stored refresh token for a new pair. Resolves false if that is impossible. */
+  private refreshSession(): Promise<boolean> {
+    if (!this.refreshing) {
+      this.refreshing = this.doRefresh().finally(() => {
+        this.refreshing = null;
+      });
+    }
+    return this.refreshing;
+  }
+
+  private async doRefresh(): Promise<boolean> {
+    const refresh = typeof window !== "undefined" ? localStorage.getItem("refresh_token") : null;
+    if (!refresh) return false;
+    try {
+      const response = await fetch(
+        `${API_URL}/api/v1/auth/refresh?refresh_token=${encodeURIComponent(refresh)}`,
+        { method: "POST" }
+      );
+      if (!response.ok) return false;
+      const tokens = (await response.json()) as { access_token: string; refresh_token: string };
+      this.setTokens(tokens.access_token, tokens.refresh_token);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private redirectToLogin() {
+    if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+      // Hard navigation on purpose: this client lives outside React, and a reload drops stale state.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+      window.location.assign("/login");
+    }
   }
 
   // ─── Auth ─────────────────────────────────
