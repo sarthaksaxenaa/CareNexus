@@ -20,7 +20,10 @@ const browser = await chromium.launch({
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"],
 });
 
-const DESKTOP = { viewport: { width: 1440, height: 900 }, colorScheme: "dark" };
+// A fixed timezone keeps times in the screenshots the same wherever this runs
+// (CI runners use UTC). Override with README_TIMEZONE.
+const timezoneId = process.env.README_TIMEZONE ?? "Asia/Kolkata";
+const DESKTOP = { viewport: { width: 1440, height: 900 }, colorScheme: "dark", timezoneId };
 const pause = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function shot(page, name, opts = {}) {
@@ -86,6 +89,7 @@ const phone = await browser.newContext({
   isMobile: true,
   hasTouch: true,
   colorScheme: "dark",
+  timezoneId,
   storageState: state,
 });
 const m = await phone.newPage();
