@@ -52,7 +52,7 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     GEMINI_API_KEY: str = ""
     LLM_PROVIDER: str = "gemini"  # "gemini" | "openai"
-    LLM_MODEL: str = "gemini-2.0-flash"
+    LLM_MODEL: str = ""  # empty = the provider's default (see llm_service)
     LLM_TEMPERATURE: float = 0.3
     LLM_MAX_TOKENS: int = 1000
 
@@ -87,9 +87,9 @@ class Settings(BaseSettings):
     def _log_llm_status(self) -> "Settings":
         """Log LLM configuration status at startup."""
         if self.LLM_PROVIDER == "gemini" and self.GEMINI_API_KEY:
-            logger.info(f"LLM: Gemini ({self.LLM_MODEL}) — API key configured ✓")
+            logger.info("LLM: Gemini — API key configured ✓")
         elif self.LLM_PROVIDER == "openai" and self.OPENAI_API_KEY:
-            logger.info(f"LLM: OpenAI ({self.LLM_MODEL}) — API key configured ✓")
+            logger.info("LLM: OpenAI — API key configured ✓")
         else:
             logger.warning(
                 "LLM: No API key configured — using RAG + rule-based fallback only. "
