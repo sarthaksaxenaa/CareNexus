@@ -1,0 +1,20 @@
+{
+  "_about": "Held-out queries written BEFORE the retrieval changes and not used for tuning; they measure whether improvements generalise. Same format as retrieval_eval.json.",
+  "cases": [
+    {"q": "my head is pounding and I feel sick when I see bright lights", "expect": ["neuro-migraine"]},
+    {"q": "blocked nose and sneezing for three days, a bit of a cough", "expect": ["resp-common-cold", "resp-allergic-rhinitis"]},
+    {"q": "loose watery stools and stomach cramps after eating street food", "expect": ["gi-gastroenteritis"]},
+    {"q": "sharp pain when I urinate and my urine smells strong", "expect": ["inf-uti"]},
+    {"q": "I sprained my wrist when I fell off my bike", "expect": ["msk-sprain"]},
+    {"q": "I wake up at 3am every night and cannot get back to sleep", "expect": ["neuro-insomnia"]},
+    {"q": "my throat is really sore and it hurts to swallow, I also have a fever", "expect": ["inf-strep-throat"]},
+    {"q": "itchy, red, watery eyes with crust on my eyelashes in the morning", "expect": ["inf-conjunctivitis"]},
+    {"q": "I keep feeling worried and restless and my heart pounds", "expect": ["mh-anxiety", "mh-panic-disorder", "cardio-palpitations"]},
+    {"q": "acid coming up into my throat when I lie down at night", "expect": ["gi-acid-reflux"]},
+    {"q": "my lower back aches after lifting heavy boxes", "expect": ["msk-back-pain"]},
+    {"q": "red scaly itchy skin on my hands that keeps coming back", "expect": ["derm-eczema", "derm-fungal"]},
+    {"q": "I feel exhausted, out of breath and look very pale", "expect": ["gen-anemia"]},
+    {"q": "fever with a cough bringing up green phlegm and pain when I breathe in", "expect": ["resp-pneumonia", "resp-bronchitis"]},
+    {"q": "I feel dizzy and everything around me seems to be spinning", "expect": ["neuro-vertigo"]}
+  ]
+}

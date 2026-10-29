@@ -56,7 +56,16 @@ SYNONYM_GROUPS: tuple[tuple[str, ...], ...] = (
     ("stomach cramps", "abdominal cramps", "belly cramps"),
     ("indigestion", "dyspepsia", "upset stomach"),
     # Neurological
-    ("dizziness", "dizzy", "lightheaded", "light headed", "vertigo", "room spinning"),
+    (
+        "dizziness",
+        "dizzy",
+        "lightheaded",
+        "light headed",
+        "vertigo",
+        "room spinning",
+        "room spins",
+        "spinning",
+    ),
     ("fainting", "syncope", "passing out", "blacking out"),
     ("numbness", "tingling", "pins and needles", "paresthesia"),
     ("seizure", "convulsion", "fit", "epileptic fit"),
@@ -99,8 +108,15 @@ SYNONYM_GROUPS: tuple[tuple[str, ...], ...] = (
     ("red eye", "pink eye", "eye redness", "bloodshot eyes"),
     ("watery eyes", "tearing", "lacrimation"),
     # Urinary
-    ("burning urination", "painful urination", "dysuria", "burning pee"),
-    ("frequent urination", "urinary frequency", "peeing a lot"),
+    (
+        "burning urination",
+        "painful urination",
+        "dysuria",
+        "burning pee",
+        "burning when i pee",
+    ),
+    ("frequent urination", "urinary frequency", "peeing a lot", "need to pee"),
+    ("urination", "urinate", "urinating", "pee", "peeing"),
     ("blood in urine", "hematuria", "bloody urine"),
     # Cardiovascular
     (
@@ -112,6 +128,15 @@ SYNONYM_GROUPS: tuple[tuple[str, ...], ...] = (
     ),
     ("high blood pressure", "hypertension", "elevated bp"),
     ("low blood pressure", "hypotension"),
+    # Smell and taste
+    ("loss of smell", "lost my sense of smell", "cant smell", "anosmia"),
+    ("loss of taste", "lost my sense of taste", "cant taste"),
+    # Allergy and environment
+    ("hay fever", "pollen", "seasonal allergies", "every spring"),
+    ("food allergy", "nut allergy", "peanut", "peanuts"),
+    ("athletes foot", "between toes", "between my toes"),
+    ("heat exhaustion", "overheated", "in the sun", "hot weather"),
+    ("thirst", "thirsty", "excessive thirst", "always thirsty"),
     # ENT
     ("hearing loss", "cant hear", "hard of hearing", "deafness"),
     ("tinnitus", "ringing in ears", "ear ringing"),

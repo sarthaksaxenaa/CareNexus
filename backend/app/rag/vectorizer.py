@@ -105,6 +105,27 @@ STOP_WORDS: frozenset[str] = frozenset(
         "under",
         "again",
         "further",
+        # conversational filler that carries no symptom meaning
+        "go",
+        "going",
+        "get",
+        "got",
+        "getting",
+        "keep",
+        "keeps",
+        "time",
+        "all",
+        "really",
+        "lot",
+        "bit",
+        "since",
+        "last",
+        "like",
+        "feel",
+        "feels",
+        "feeling",
+        "won",
+        "away",
         "once",
         "here",
         "there",
@@ -115,7 +136,6 @@ STOP_WORDS: frozenset[str] = frozenset(
         "who",
         "whom",
         "how",
-        "all",
         "each",
         "every",
         "both",
@@ -140,6 +160,47 @@ STOP_WORDS: frozenset[str] = frozenset(
         "out",
     }
 )
+
+
+# How much each knowledge-base field counts when matching (see
+# MedicalVectorizer._condition_to_document).
+FIELD_WEIGHTS: dict[str, int] = {
+    "name": 3,
+    "aliases": 3,
+    "symptoms": 2,
+    "description": 1,
+    "red_flags": 1,
+}
+
+
+def stem(word: str) -> str:
+    """Light suffix stripping so word forms meet: spins/spinning -> spin,
+    aches/aching -> ach, infections -> infection.
+
+    Deliberately small (not Porter): it only needs to be consistent, because
+    the same function runs on the index and on every query.
+    """
+    if len(word) <= 3:
+        return word
+    for suffix, replacement in (
+        ("ies", "y"),
+        ("ing", ""),
+        ("ed", ""),
+        ("es", ""),
+        ("s", ""),
+    ):
+        if (
+            word.endswith(suffix)
+            and not word.endswith("ss")
+            and len(word) - len(suffix) >= 3
+        ):
+            word = word[: len(word) - len(suffix)] + replacement
+            break
+    if len(word) > 3 and word.endswith("e"):
+        word = word[:-1]
+    if len(word) > 3 and word[-1] == word[-2] and word[-1] not in "lsz":
+        word = word[:-1]
+    return word
 
 
 @dataclass(frozen=True, slots=True)
@@ -216,22 +277,33 @@ class MedicalVectorizer:
 
     @staticmethod
     def _condition_to_document(condition: MedicalCondition) -> Document:
-        """Flatten a MedicalCondition into a searchable Document."""
-        parts = [
-            condition.name,
-            condition.category,
-            " ".join(condition.aliases),
-            " ".join(condition.symptoms),
-            condition.description,
-            " ".join(condition.red_flags),
-            condition.when_to_seek_help,
-            condition.first_aid,
-        ]
-        text = " ".join(parts)
-        tokens = MedicalVectorizer._tokenize(text)
+        """Flatten a MedicalCondition into a searchable Document.
+
+        Only fields that describe what a patient experiences are indexed, and
+        the most specific ones count more (field boosting):
+
+            name, aliases  x3   what people call it
+            symptoms       x2   what it feels like
+            description,
+            red_flags      x1   supporting detail
+
+        Advice text (first_aid, when_to_seek_help) is deliberately left out:
+        phrases such as "go to the emergency room" made everyday words like
+        "room" or "go" match the wrong condition.
+        """
+        weighted = (
+            (condition.name, FIELD_WEIGHTS["name"]),
+            (" ".join(condition.aliases), FIELD_WEIGHTS["aliases"]),
+            (" ".join(condition.symptoms), FIELD_WEIGHTS["symptoms"]),
+            (condition.description, FIELD_WEIGHTS["description"]),
+            (" ".join(condition.red_flags), FIELD_WEIGHTS["red_flags"]),
+        )
+        tokens: list[str] = []
+        for text, weight in weighted:
+            tokens.extend(MedicalVectorizer._tokenize(text) * weight)
         return Document(
             condition_id=condition.id,
-            text=text,
+            text=" ".join(text for text, _ in weighted),
             tokens=tuple(tokens),
         )
 
@@ -245,16 +317,26 @@ class MedicalVectorizer:
             3. Split on whitespace
             4. Remove stop words
             5. Remove single-character tokens
+            6. Stem (see ``stem``)
         """
         text = text.lower()
         text = re.sub(r"[^a-z0-9\s]", " ", text)
-        tokens = text.split()
-        return [token for token in tokens if token not in STOP_WORDS and len(token) > 1]
+        return [
+            stem(token)
+            for token in text.split()
+            if token not in STOP_WORDS and len(token) > 1
+        ]
 
     def _query_to_vector(self, query: str) -> dict[str, float]:
         """Convert a query string to a TF-IDF vector with synonym expansion."""
-        tokens = self._tokenize(query)
-        tokens = expand_synonyms(tokens, query.lower())
+        lowered = query.lower()
+        raw = [
+            t
+            for t in re.sub(r"[^a-z0-9\s]", " ", lowered).split()
+            if t not in STOP_WORDS
+        ]
+        # Synonyms are keyed on whole words, so expand before stemming.
+        tokens = [stem(t) for t in expand_synonyms(raw, lowered) if len(t) > 1]
         term_counts = Counter(tokens)
         max_count = max(term_counts.values()) if term_counts else 1
 
