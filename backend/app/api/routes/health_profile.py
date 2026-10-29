@@ -80,14 +80,7 @@ async def update_my_profile(
         )
 
     updated = await update_profile(
-        db,
-        profile,
-        age=request.age,
-        gender=request.gender,
-        blood_group=request.blood_group,
-        known_conditions=request.known_conditions,
-        current_medications=request.current_medications,
-        allergies=request.allergies,
+        db, profile, **request.model_dump(exclude_unset=True)
     )
     return HealthProfileResponse.model_validate(updated)
 

@@ -103,3 +103,47 @@ async def test_token_with_malformed_subject_is_401_not_500(client: AsyncClient):
         "/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"}
     )
     assert resp.status_code == 401
+
+
+# ─── Password hashing ─────────────────────────────────────────────────────────
+
+
+def test_new_hashes_use_the_sha256_prehash():
+    from app.services.auth_service import hash_password, needs_rehash, verify_password
+
+    hashed = hash_password("p" * 100)
+    assert hashed.startswith("sha256$")
+    assert not needs_rehash(hashed)
+    assert verify_password("p" * 100, hashed)
+    assert not verify_password("p" * 99 + "q", hashed)
+
+
+async def test_legacy_bcrypt_hash_still_logs_in_and_is_upgraded(client: AsyncClient):
+    import bcrypt
+
+    from app.models.user import User
+
+    email = f"legacy_{uuid.uuid4().hex[:6]}@example.com"
+    data = await register(client, email)
+    legacy = bcrypt.hashpw(b"OldPassword#1", bcrypt.gensalt()).decode()
+    async with TestSessionFactory() as db:
+        await db.execute(
+            update(User)
+            .where(User.id == uuid.UUID(data["user"]["id"]))
+            .values(hashed_password=legacy)
+        )
+        await db.commit()
+
+    resp = await client.post(
+        "/api/v1/auth/login", json={"email": email, "password": "OldPassword#1"}
+    )
+    assert resp.status_code == 200
+
+    async with TestSessionFactory() as db:
+        user = await db.get(User, uuid.UUID(data["user"]["id"]))
+        assert user.hashed_password.startswith("sha256$")
+
+    again = await client.post(
+        "/api/v1/auth/login", json={"email": email, "password": "OldPassword#1"}
+    )
+    assert again.status_code == 200

@@ -1,9 +1,10 @@
 """Pydantic schemas for authentication endpoints."""
 
 import uuid
-from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+
+from app.schemas.common import UTCDateTime
 
 # ─── Request Schemas ──────────────────────────────
 
@@ -17,6 +18,14 @@ class UserRegisterRequest(BaseModel):
         description="Password must be 8-128 characters",
     )
     full_name: str = Field(..., min_length=2, max_length=100)
+
+    @field_validator("full_name")
+    @classmethod
+    def _name_not_blank(cls, value: str) -> str:
+        value = " ".join(value.split())
+        if len(value) < 2:
+            raise ValueError("Name must have at least 2 visible characters")
+        return value
 
 
 class UserLoginRequest(BaseModel):
@@ -40,7 +49,7 @@ class UserResponse(BaseModel):
     full_name: str
     is_active: bool
     is_verified: bool
-    created_at: datetime
+    created_at: UTCDateTime
 
 
 class TokenResponse(BaseModel):
