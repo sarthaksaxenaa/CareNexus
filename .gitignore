@@ -85,3 +85,8 @@ nexus.docx
 
 # End-to-end test database
 e2e-test.db*
+
+# Reports written by the README assets workflow
+backend/test-report.xml
+backend/retrieval.json
+backend/pip-audit.json

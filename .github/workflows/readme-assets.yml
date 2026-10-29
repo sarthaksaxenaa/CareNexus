@@ -1,0 +1,141 @@
+name: README Assets
+
+# Regenerates the README's banner, stats card, screenshots and demo GIF from
+# the real project, and commits them when they change.
+#
+# - stats card: weekly, on every push to main, or on demand
+# - screenshots + GIF: when the interface or triage code changes, or on demand
+on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - "backend/**"
+      - ".github/workflows/readme-assets.yml"
+      - "!docs/assets/**"
+  schedule:
+    - cron: "17 3 * * 1" # Mondays 03:17 UTC
+  workflow_dispatch:
+    inputs:
+      screenshots:
+        description: "Also recapture screenshots and the demo GIF"
+        type: boolean
+        default: true
+
+concurrency:
+  group: readme-assets
+  cancel-in-progress: true
+
+permissions:
+  contents: write # commit the regenerated assets
+
+env:
+  PYTHON_VERSION: "3.12"
+  NODE_VERSION: "20"
+
+jobs:
+  assets:
+    name: "🖼️ Generate README assets"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 2 # to see which files the push changed
+
+      - name: Decide whether to recapture screenshots
+        id: scope
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "shots=${{ inputs.screenshots }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" = "push" ] && \
+               git diff --name-only HEAD~1 HEAD | grep -qE '^(frontend/src/|frontend/scripts/readme/|backend/app/core/triage/|backend/app/rag/)'; then
+            echo "shots=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "shots=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: backend/requirements*.txt
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        run: |
+          pip install -r backend/requirements.txt -r backend/requirements-dev.txt pip-audit --only-binary :all:
+          cd frontend && npm ci
+
+      # ── Measurements (each step writes the report stats.mjs reads) ──────────
+      - name: Backend tests and coverage
+        working-directory: ./backend
+        env:
+          TESTING: "true"
+        run: pytest --cov --cov-report=xml --junitxml=test-report.xml -q
+      - name: Retrieval accuracy
+        working-directory: ./backend
+        run: python -m scripts.eval_retrieval --json > retrieval.json
+      - name: Backend audit
+        working-directory: ./backend
+        run: pip-audit -r requirements.txt -r requirements-dev.txt -f json > pip-audit.json || true
+      - name: Frontend unit tests
+        working-directory: ./frontend
+        run: npx vitest run --reporter=json --outputFile=vitest-report.json
+      - name: Frontend audit
+        working-directory: ./frontend
+        run: npm audit --json > npm-audit.json || true
+      - name: Production build
+        working-directory: ./frontend
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+        run: npm run build
+      - name: Install Chromium
+        working-directory: ./frontend
+        run: npx playwright install --with-deps chromium
+      - name: End-to-end tests
+        working-directory: ./frontend
+        env:
+          E2E_PYTHON: python
+        run: npx playwright test --reporter=json > e2e-report.json
+
+      # ── Artwork ──────────────────────────────────────────────────────────────
+      - name: Banner and stats card
+        working-directory: ./frontend
+        run: |
+          node scripts/readme/banner.mjs
+          node scripts/readme/stats.mjs
+
+      - name: Screenshots and demo GIF
+        if: steps.scope.outputs.shots == 'true'
+        working-directory: ./frontend
+        run: |
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          cd ../backend
+          DATABASE_URL=sqlite:////tmp/readme.db RATE_LIMIT_AUTH=100 \
+            python -m uvicorn app.main:app --port 8000 > /tmp/api.log 2>&1 &
+          cd ../frontend
+          npm run start -- -p 3000 > /tmp/web.log 2>&1 &
+          for i in $(seq 1 60); do
+            curl -sf http://localhost:8000/health >/dev/null && curl -sf http://localhost:3000 >/dev/null && break
+            sleep 1
+          done
+          node scripts/readme/capture.mjs
+
+      # ── Commit ───────────────────────────────────────────────────────────────
+      - name: Commit changed assets
+        run: |
+          git add docs/assets
+          if git diff --cached --quiet; then
+            echo "README assets unchanged."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "docs(readme): refresh generated assets [skip ci]"
+          git pull --rebase origin main
+          git push origin HEAD:main

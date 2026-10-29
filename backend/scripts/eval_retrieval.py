@@ -1,6 +1,6 @@
 """Measure retrieval quality on the labelled set in tests/data/retrieval_eval.json.
 
-    cd backend && python -m scripts.eval_retrieval [--misses]
+    cd backend && python -m scripts.eval_retrieval [--misses | --json]
 
 Reports top-1 and top-3 accuracy: the share of queries whose first result
 (or any of the first three) is an acceptable condition.
@@ -40,6 +40,14 @@ def evaluate(top_k: int = 3, path: Path = EVAL_FILE) -> dict:
 
 
 if __name__ == "__main__":
+    if "--json" in sys.argv:
+        # Machine-readable summary (used to build the README stats card).
+        summary = {}
+        for key, path in (("labelled", EVAL_FILE), ("heldout", HELDOUT_FILE)):
+            r = evaluate(path=path)
+            summary[key] = {"n": r["n"], "top1": r["top1"], "top3": r["top3"]}
+        print(json.dumps(summary))
+        sys.exit(0)
     for name, path in (("labelled set", EVAL_FILE), ("held-out set", HELDOUT_FILE)):
         result = evaluate(path=path)
         print(
