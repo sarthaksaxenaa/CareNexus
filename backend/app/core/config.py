@@ -34,10 +34,9 @@ class Settings(BaseSettings):
     PORT: int = 8000
 
     # ─── Database ────────────────────────────────────────────
-    DATABASE_URL: str = "postgresql://medibot_user:medibot_pass@localhost:5432/medibot"
-
-    # ─── Redis (optional) ────────────────────────────────────
-    REDIS_URL: str = "redis://localhost:6379"
+    # SQLite file by default so a fresh clone runs with no database server.
+    # Set a postgresql:// URL in production.
+    DATABASE_URL: str = "sqlite:///./carenexus.db"
 
     # ─── CORS ────────────────────────────────────────────────
     ALLOWED_ORIGINS: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]

@@ -6,22 +6,22 @@ from sqlalchemy.orm import DeclarativeBase
 from app.core.config import settings
 
 
-def _build_database_url() -> str:
-    """Build the async database URL from settings.
+def to_async_url(url: str) -> str:
+    """Map a plain database URL to its async-driver form.
 
-    Supports PostgreSQL (production) and SQLite (local development).
+    SQLite (local default) -> aiosqlite; PostgreSQL -> asyncpg. Hosts such as
+    Railway and Heroku hand out the short ``postgres://`` scheme, so accept it.
+    URLs that already name a driver are returned unchanged.
     """
-    url = settings.DATABASE_URL
-
-    if url.startswith("sqlite"):
-        # SQLite async: sqlite+aiosqlite:///path/to/db.sqlite3
-        return url.replace("sqlite:///", "sqlite+aiosqlite:///")
-
-    # PostgreSQL async
-    return url.replace("postgresql://", "postgresql+asyncpg://")
+    if url.startswith("sqlite:///"):
+        return url.replace("sqlite:///", "sqlite+aiosqlite:///", 1)
+    for scheme in ("postgresql://", "postgres://"):
+        if url.startswith(scheme):
+            return "postgresql+asyncpg://" + url[len(scheme) :]
+    return url
 
 
-DATABASE_URL = _build_database_url()
+DATABASE_URL = to_async_url(settings.DATABASE_URL)
 
 # SQLite doesn't support pool_pre_ping
 _is_sqlite = DATABASE_URL.startswith("sqlite")
