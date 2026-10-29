@@ -10,15 +10,16 @@ export default function Icon() {
         style={{
           width: "32px",
           height: "32px",
-          borderRadius: "8px",
-          // Royal Amethyst lockup on jet black — matches the in-app wordmark.
-          background: "linear-gradient(135deg, #3B0A6B 0%, #9333EA 100%)",
+          borderRadius: "16px",
+          // Amethyst glow on jet black with a lilac mark, as in the app.
+          background: "radial-gradient(circle at 35% 30%, #6420A8 0%, #3B0A6B 55%, #050505 100%)",
+          border: "1px solid #C7A8F0",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          color: "white",
+          color: "#F4EFFA",
           fontSize: "20px",
-          fontWeight: 800,
+          fontWeight: 300,
           fontFamily: "sans-serif",
         }}
       >
