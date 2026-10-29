@@ -5,11 +5,15 @@ pydantic==2.9.2
 pydantic-settings==2.5.2
 
 # ─── Database ─────────────────────────────────
+# SQLAlchemy's async engine loads its driver by NAME from the connection URL,
+# so no `import aiosqlite` appears in the code and static analysis cannot find
+# it. It is still required at runtime (database.py rewrites sqlite:/// to
+# sqlite+aiosqlite:///). greenlet is the bridge SQLAlchemy async needs; it is
+# only installed automatically on Python < 3.13, so pin it explicitly.
 sqlalchemy==2.0.35
-alembic==1.13.3
-psycopg2-binary==2.9.9
-asyncpg==0.30.0
-redis==5.1.1
+aiosqlite==0.20.0
+greenlet>=3.1.1
+asyncpg==0.30.0  # PostgreSQL driver for production (postgresql+asyncpg://)
 
 # ─── Validation ───────────────────────────────
 email-validator==2.2.0
@@ -18,12 +22,9 @@ email-validator==2.2.0
 bcrypt==4.2.0
 python-jose[cryptography]==3.3.0
 
-# ─── AI / LLM ────────────────────────────────
-langchain==0.3.1
-langchain-openai==0.2.1
-langchain-community==0.3.1
-chromadb==0.5.7
+# ─── AI / LLM (optional: the app falls back to the offline RAG engine) ────
 openai==1.50.2
+google-genai>=1.0.0,<2
 
 # ─── Utilities ────────────────────────────────
 python-dotenv==1.0.1
