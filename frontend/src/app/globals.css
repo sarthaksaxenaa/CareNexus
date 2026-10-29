@@ -1,8 +1,9 @@
 @import "tailwindcss";
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   CareNexus Design System — "Obsidian Amethyst"
-   Jet Black (#050505) × Royal Amethyst (#3B0A6B)
+   CareNexus Design System — "Amethyst Editorial"
+   Jet Black (#050505) × Royal Amethyst (#3B0A6B) × Lilac (#C7A8F0)
+   Cormorant Garamond for display, Jost for interface text.
 
    Single source of truth for the palette. Components consume semantic tokens
    (bg-surface, text-ink-2, border-edge) rather than raw hex, so the whole
@@ -14,29 +15,32 @@
 
 @theme {
   /* ─── Canvas & elevation ──────────────────────────────────────────────── */
-  --color-void: #050505;        /* base page canvas — jet black          */
-  --color-abyss: #0a0510;       /* deepest recessed wells                */
-  --color-surface: #0d0614;     /* cards, panels                         */
-  --color-surface-2: #130920;   /* raised surfaces, sidebar, popovers    */
-  --color-surface-3: #1a0c2a;   /* hover state for raised surfaces       */
+  /* Near-neutral blacks: the amethyst comes from light and glow, not from
+     tinting every panel purple. */
+  --color-void: #050505;        /* page canvas — jet black               */
+  --color-abyss: #030303;       /* recessed wells, inputs                */
+  --color-surface: #0a090c;     /* panels                                */
+  --color-surface-2: #0f0d12;   /* raised panels, sidebar                */
+  --color-surface-3: #16131b;   /* hover on raised panels                */
 
-  /* ─── Borders ─────────────────────────────────────────────────────────── */
-  --color-edge: #2a0845;        /* standard divider                      */
-  --color-edge-soft: #1c0730;   /* whisper divider inside cards          */
+  /* ─── Hairlines ───────────────────────────────────────────────────────── */
+  --color-edge: rgb(199 168 240 / 0.16);      /* standard rule             */
+  --color-edge-soft: rgb(199 168 240 / 0.08); /* whisper rule              */
 
   /* ─── Royal Amethyst ramp ─────────────────────────────────────────────── */
-  --color-amethyst: #3b0a6b;      /* brand base                          */
-  --color-amethyst-600: #6b21a8;  /* primary action                      */
-  --color-amethyst-500: #7e22ce;  /* primary action hover                */
-  --color-amethyst-400: #9333ea;  /* active / focus                      */
-  --color-amethyst-300: #a855f7;  /* accents, links, icons               */
-  --color-amethyst-200: #c084fc;  /* bright highlight                    */
+  --color-amethyst: #3b0a6b;      /* brand base — fills, glow            */
+  --color-amethyst-600: #4e1488;  /* primary action                      */
+  --color-amethyst-500: #6420a8;  /* primary action hover                */
+  --color-amethyst-400: #8a4fd1;  /* focus, active                       */
+  --color-amethyst-300: #a77de6;  /* links, icons                        */
+  --color-amethyst-200: #c7a8f0;  /* lilac — display type, highlights    */
 
   /* ─── Typography ──────────────────────────────────────────────────────── */
-  --color-ink: #ffffff;         /* headings — maximum contrast           */
-  --color-ink-2: #e9d5ff;       /* body copy — soft lavender             */
-  --color-ink-3: #c4b5fd;       /* secondary copy                        */
-  --color-ink-4: #9ca3af;       /* captions, metadata                    */
+  --color-lilac: #c7a8f0;       /* display serif                         */
+  --color-ink: #f4effa;         /* headings — ivory, softer than white   */
+  --color-ink-2: #ddd5e8;       /* body copy                             */
+  --color-ink-3: #b1a8bd;       /* secondary copy                        */
+  --color-ink-4: #8c8597;       /* captions, metadata — mist             */
 
   /* ─── Clinical triage (DO NOT re-theme) ───────────────────────────────── */
   --color-triage-green: #10b981;

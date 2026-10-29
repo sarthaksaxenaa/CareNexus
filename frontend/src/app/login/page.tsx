@@ -32,22 +32,25 @@ export default function LoginPage() {
 
   return (
     <AuthLayout
-      subtitle="Sign in to your account"
+      title="Welcome back"
+      subtitle="Sign in to see your past checks and continue a conversation."
       error={error}
       footer={
-        <p className="text-center text-sm text-ink-4">
+        <p className="text-sm font-light text-ink-4">
           Don&apos;t have an account?{" "}
-          <Link href="/register" className="text-amethyst-300 hover:text-amethyst-200 font-medium transition-colors duration-200">
+          <Link href="/register" className="text-lilac underline decoration-lilac/30 underline-offset-4 hover:decoration-lilac transition-colors duration-200">
             Register
           </Link>
         </p>
       }
     >
-      <form onSubmit={handleSubmit} className="rounded-2xl bg-surface border border-edge-soft shadow-2xl shadow-black/50 p-8 space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label className={LABEL_CLASS}>Email</label>
+          <label htmlFor="auth-email" className={LABEL_CLASS}>Email</label>
           <input
             type="email"
+            id="auth-email"
+            autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -57,9 +60,11 @@ export default function LoginPage() {
         </div>
 
         <div>
-          <label className={LABEL_CLASS}>Password</label>
+          <label htmlFor="auth-password" className={LABEL_CLASS}>Password</label>
           <input
             type="password"
+            id="auth-password"
+            autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -69,7 +74,7 @@ export default function LoginPage() {
         </div>
 
         <button type="submit" disabled={isLoading} className={BTN_PRIMARY}>
-          {isLoading ? "Signing in..." : "Sign In"}
+          {isLoading ? "Signing in..." : "Sign in"}
         </button>
       </form>
     </AuthLayout>

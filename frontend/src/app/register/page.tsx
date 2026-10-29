@@ -33,22 +33,25 @@ export default function RegisterPage() {
 
   return (
     <AuthLayout
-      subtitle="Create your account"
+      title="Begin here"
+      subtitle="Create an account to keep your checks and health profile in one place."
       error={error}
       footer={
-        <p className="text-center text-sm text-ink-4">
+        <p className="text-sm font-light text-ink-4">
           Already have an account?{" "}
-          <Link href="/login" className="text-amethyst-300 hover:text-amethyst-200 font-medium transition-colors duration-200">
+          <Link href="/login" className="text-lilac underline decoration-lilac/30 underline-offset-4 hover:decoration-lilac transition-colors duration-200">
             Sign in
           </Link>
         </p>
       }
     >
-      <form onSubmit={handleSubmit} className="rounded-2xl bg-surface border border-edge-soft shadow-2xl shadow-black/50 p-8 space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label className={LABEL_CLASS}>Full Name</label>
+          <label htmlFor="auth-fullName" className={LABEL_CLASS}>Full name</label>
           <input
             type="text"
+            id="auth-fullName"
+            autoComplete="name"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             required
@@ -58,9 +61,11 @@ export default function RegisterPage() {
         </div>
 
         <div>
-          <label className={LABEL_CLASS}>Email</label>
+          <label htmlFor="auth-email" className={LABEL_CLASS}>Email</label>
           <input
             type="email"
+            id="auth-email"
+            autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -70,20 +75,22 @@ export default function RegisterPage() {
         </div>
 
         <div>
-          <label className={LABEL_CLASS}>Password</label>
+          <label htmlFor="auth-password" className={LABEL_CLASS}>Password</label>
           <input
             type="password"
+            id="auth-password"
+            autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
             minLength={8}
             className={INPUT_CLASS}
-            placeholder="••••••••  (min 8 characters)"
+            placeholder="At least 8 characters"
           />
         </div>
 
         <button type="submit" disabled={isLoading} className={BTN_PRIMARY}>
-          {isLoading ? "Creating account..." : "Create Account"}
+          {isLoading ? "Creating account..." : "Create account"}
         </button>
       </form>
     </AuthLayout>
