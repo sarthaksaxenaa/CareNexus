@@ -14,7 +14,7 @@ import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from app.core.database import Base, get_db
+from app.core.database import Base, enable_sqlite_foreign_keys, get_db
 from app.core.rate_limiter import get_rate_limiter
 from app.main import app
 
@@ -27,6 +27,8 @@ test_engine = create_async_engine(
     echo=False,
     connect_args={"check_same_thread": False},
 )
+
+enable_sqlite_foreign_keys(test_engine)
 
 TestSessionFactory = async_sessionmaker(
     test_engine, class_=AsyncSession, expire_on_commit=False
