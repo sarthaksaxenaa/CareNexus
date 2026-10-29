@@ -24,7 +24,11 @@ export default function ChatPage() {
         "Hello! I'm **CareNexus**, your AI health assistant. 🏥\n\nDescribe your symptoms and I'll help assess them using our medical knowledge base.\n\n- 🟢 **Green** — Self-care guidance\n- 🟡 **Yellow** — See a doctor soon\n- 🔴 **Red** — Seek emergency care\n\n⚕️ *Remember — I provide guidance, not diagnosis. Always consult a doctor for medical advice.*",
       triage_level: null,
       sources: null,
-      created_at: new Date().toISOString(),
+      // Deliberately empty: the greeting is UI chrome, not a stored message.
+      // A real Date here is evaluated at prerender time on the server and again
+      // in the browser, so the rendered timestamps differ and React throws a
+      // hydration error (#418). MessageBubble hides an empty timestamp.
+      created_at: "",
     },
   ]);
   const [input, setInput] = useState("");
@@ -127,7 +131,7 @@ export default function ChatPage() {
           "Hello! I'm **CareNexus**, your AI health assistant. 🏥\n\nDescribe your symptoms and I'll help assess them.\n\n⚕️ *Always consult a doctor for medical advice.*",
         triage_level: null,
         sources: null,
-        created_at: new Date().toISOString(),
+        created_at: "",
       },
     ]);
   };
