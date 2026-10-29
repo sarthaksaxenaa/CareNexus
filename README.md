@@ -1,23 +1,57 @@
-# CareNexus
+<div align="center">
 
-> A symptom-triage assistant. Describe what you feel; CareNexus says how urgently you should get care, and what to do in the meantime.
+<img src="docs/assets/banner.svg" alt="CareNexus: a clearer kind of care. Self-care, see a doctor, emergency." width="100%">
 
 [![CI](https://github.com/sarthaksaxenaa/CareNexus/actions/workflows/ci.yml/badge.svg)](https://github.com/sarthaksaxenaa/CareNexus/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](https://python.org)
-[![Next.js 16](https://img.shields.io/badge/Next.js-16-black.svg)](https://nextjs.org)
+[![README assets](https://github.com/sarthaksaxenaa/CareNexus/actions/workflows/readme-assets.yml/badge.svg)](https://github.com/sarthaksaxenaa/CareNexus/actions/workflows/readme-assets.yml)
+![Python](https://img.shields.io/badge/Python-3.12-3b0a6b?logo=python&logoColor=c7a8f0&labelColor=050505)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.143-3b0a6b?logo=fastapi&logoColor=c7a8f0&labelColor=050505)
+![Next.js](https://img.shields.io/badge/Next.js-16-3b0a6b?logo=nextdotjs&logoColor=c7a8f0&labelColor=050505)
+![three.js](https://img.shields.io/badge/three.js-3D-3b0a6b?logo=threedotjs&logoColor=c7a8f0&labelColor=050505)
+[![License: MIT](https://img.shields.io/badge/License-MIT-3b0a6b?labelColor=050505)](LICENSE)
 
-CareNexus does not diagnose. It grades a message into one of three levels and explains why:
+**Describe what you feel. CareNexus tells you how urgently to get care, and what to do in the meantime.**
+
+[Quick start](#quick-start) · [How it decides](#how-a-message-is-assessed) · [Architecture](#architecture) · [Quality](#quality) · [API](#api)
+
+</div>
+
+<br>
+
+<p align="center">
+  <img src="docs/assets/demo.gif" alt="Demo: a fever check graded 'see a doctor', a stroke description graded 'emergency', the 3D body map, and the dashboard" width="900">
+</p>
+
+<p align="center"><img src="docs/assets/stats.svg" alt="Measured by CI: tests passing, backend coverage, retrieval accuracy, conditions in the library, known vulnerabilities" width="100%"></p>
+
+## What it does
+
+CareNexus is a **triage** assistant. It does not name your illness; it answers the question that matters first:
 
 | Level | Meaning |
-|---|---|
-| **Self-care** | Usually safe to manage at home, with signs to watch for |
-| **See a doctor** | Should be examined in person soon |
-| **Emergency** | Get help now |
+|:--|:--|
+| 🟢 **Self-care** | Usually safe to manage at home, with clear signs to watch for |
+| 🟠 **See a doctor** | Book an appointment soon; it should be examined in person |
+| 🔴 **Emergency** | Get help now: call your local emergency number |
 
-It runs **fully offline**: a rules engine and a search over a curated medical library answer every message. A Gemini API key is optional and, when set, writes the reply from the same retrieved knowledge.
+It works **fully offline**. Emergency rules and a search over a curated library of **49 ICD-10-coded conditions** answer every message; a Gemini API key is optional and, when set, writes the reply from the same retrieved knowledge.
 
----
+<table>
+  <tr>
+    <td width="50%"><img src="docs/assets/screenshots/chat.png" alt="Chat: an emergency answer next to the 3D body map"><br><sub><b>Chat</b>: graded answers, saved conversations, a 3D body map with a list fallback</sub></td>
+    <td width="50%"><img src="docs/assets/screenshots/home.png" alt="Home page"><br><sub><b>Home</b>: an editorial interface in jet black and royal amethyst</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/assets/screenshots/dashboard.png" alt="Dashboard"><br><sub><b>Dashboard</b>: how answers were graded and weekly activity</sub></td>
+    <td><img src="docs/assets/screenshots/profile.png" alt="Health profile"><br><sub><b>Health profile</b>: age, sex and conditions adjust the level of concern</sub></td>
+  </tr>
+</table>
+
+<p align="center">
+  <img src="docs/assets/screenshots/mobile-home.png" alt="Home on a phone" width="260">
+  &nbsp;&nbsp;
+  <img src="docs/assets/screenshots/mobile-chat.png" alt="Chat on a phone" width="260">
+</p>
 
 ## Quick start
 
@@ -26,156 +60,188 @@ Requires **Python 3.12+** and **Node.js 20+**.
 ```bash
 git clone https://github.com/sarthaksaxenaa/CareNexus.git
 cd CareNexus
-python run.py          # Windows: double-click start.ps1
+python run.py            # Windows: double-click start.ps1
 ```
 
-`run.py` creates the Python environment, installs dependencies whenever `requirements.txt` or `package-lock.json` changes, starts both servers and opens the browser.
+`run.py` creates the Python environment, installs dependencies whenever `requirements.txt` or `package-lock.json` changes, starts both servers and opens **http://localhost:3000**. API docs are at **http://localhost:8000/docs**.
 
-| | URL |
-|---|---|
-| App | http://localhost:3000 |
-| API docs (Swagger) | http://localhost:8000/docs |
-| Health check | http://localhost:8000/health |
-
-No configuration is needed. To use Gemini, copy `backend/.env.example` to `backend/.env` and set `GEMINI_API_KEY`.
-
-**With Docker:** `docker compose up --build`
-
----
+No configuration is needed. For Gemini answers, copy `backend/.env.example` to `backend/.env` and set `GEMINI_API_KEY`. With Docker: `docker compose up --build`.
 
 ## How a message is assessed
 
-```
-message ──► sanitise ──► emergency rules ──► parse symptoms ──► profile risk ──► retrieve ──► answer
-            (HTML,        (6 warning-sign     (body parts,       (age, sex,       (top 3 of    (Gemini if
-             prompt        groups; a match     duration,          known            49 ICD-10-   configured,
-             injection)    ends here: RED)     severity words)    conditions)      coded        else rules)
-                                                                                    conditions)
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'background':'#050505','primaryColor':'#140a20','primaryTextColor':'#f4effa','primaryBorderColor':'#6420a8','lineColor':'#c7a8f0','edgeLabelBackground':'#050505','secondaryColor':'#0a090c','tertiaryColor':'#0a090c','fontFamily':'Georgia, serif'}}}%%
+flowchart LR
+    M([Message]) --> S[Sanitise<br/><sub>strip HTML, refuse<br/>prompt injection</sub>]
+    S --> R{Emergency<br/>rules}
+    R -- match --> RED([🔴 Emergency])
+    R -- no match --> P[Parse<br/><sub>body parts, duration,<br/>severity words</sub>]
+    P --> F[Profile risk<br/><sub>age, sex,<br/>known conditions</sub>]
+    F --> Q[Retrieve<br/><sub>top 3 of 49<br/>conditions</sub>]
+    Q --> G{Gemini<br/>key?}
+    G -- yes --> L[LLM answer<br/>grounded in matches]
+    G -- no / error --> O[Offline rules<br/>answer]
+    L --> A([Graded answer])
+    O --> A
 ```
 
 1. **Sanitise.** HTML is stripped; 12 prompt-injection patterns are refused.
-2. **Emergency rules first.** Chest pain, stroke signs, breathing difficulty, unconsciousness, severe bleeding and self-harm are matched before anything else and answered immediately.
-3. **Parse.** Body parts, duration ("for 9 days") and severity words are extracted.
-4. **Profile.** Age, sex and known conditions from the user's health profile raise the level of concern.
-5. **Retrieve.** TF-IDF search over the library with field weighting (name and aliases count most), light stemming and medical synonyms.
-6. **Answer.** Gemini writes the reply grounded in the retrieved conditions, or the offline engine builds it.
+2. **Emergency rules first.** Chest pain, stroke signs, breathing difficulty, unconsciousness, severe bleeding and self-harm are answered immediately.
+3. **Parse and personalise.** Duration, severity words and the health profile raise the level of concern.
+4. **Retrieve.** TF-IDF search with field weighting (a condition's name counts more than its description), light stemming and medical synonyms.
+5. **Answer.** Gemini writes the reply from the retrieved conditions, or the offline engine builds it; any LLM failure falls back to offline.
 
-### Measured retrieval accuracy
+## Architecture
 
-Labelled everyday-language queries, including every quick-start prompt (`python -m scripts.eval_retrieval` in `backend/`):
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'background':'#050505','primaryColor':'#140a20','primaryTextColor':'#f4effa','primaryBorderColor':'#6420a8','lineColor':'#c7a8f0','edgeLabelBackground':'#050505','secondaryColor':'#0a090c','tertiaryColor':'#0a090c','clusterBkg':'#0a090c','clusterBorder':'#3b0a6b','fontFamily':'Georgia, serif'}}}%%
+flowchart TB
+    subgraph Browser["Browser · Next.js 16 · React 19"]
+        UI[Pages: home, chat, dashboard, profile]
+        BM[3D body map<br/>three.js, lazy-loaded]
+        AC[API client<br/>silent token refresh]
+    end
+    subgraph API["FastAPI service"]
+        MW[Middleware<br/>CORS, request IDs, security headers]
+        RT[Routes<br/>auth, chat, health-profile, analytics]
+        SV[Services]
+        TE[Triage engine<br/>rules, parser]
+        RAG[Retriever<br/>TF-IDF over 49 conditions]
+        LLM[Gemini<br/>optional]
+    end
+    DB[(SQLite / PostgreSQL<br/>users, profiles, sessions, messages)]
+    UI --> AC
+    UI --> BM
+    AC -- "JSON over HTTP, JWT" --> MW --> RT --> SV
+    SV --> TE --> RAG
+    TE -.-> LLM
+    SV --> DB
+```
 
-| Set | Queries | Correct first result | Correct in top 3 |
-|---|---|---|---|
-| Labelled | 43 | 86.0% | 100% |
-| Held-out (written before tuning) | 15 | 93.3% | 100% |
+Routes validate and handle HTTP, services hold the logic, models map tables. More in [docs/architecture.md](docs/architecture.md).
 
-CI fails if accuracy drops below these levels.
+## Quality
 
----
+Every figure on the stats card above is produced by CI from real reports; nothing is typed by hand.
 
-## Features
+| Suite | Tests | What it covers |
+|:--|--:|:--|
+| Backend (pytest) | 361 | units, API contracts, security, edge cases, database integrity, retrieval quality |
+| Frontend unit (Vitest) | 34 | API client refresh and errors, time parsing, body-map logic |
+| End-to-end (Playwright) | 26 | a real browser on the production build, the real API and a database |
 
-- **Chat** with saved conversations, quick-start symptoms and a **3D body map** (three.js) with an accessible list fallback
-- **Health profile** that personalises triage
-- **Dashboard** of how answers were graded and weekly activity
-- **Accounts** with JWT access and refresh tokens, renewed silently when they expire
+**Retrieval accuracy** on everyday-language queries, including every quick-start prompt:
 
-## Security
+| Query set | Correct first match | Correct in top 3 |
+|:--|--:|--:|
+| Labelled (43) | 86.0% | 100% |
+| Held out, written before tuning (15) | 93.3% | 100% |
 
-- Passwords: SHA-256 pre-hash + bcrypt (no 72-byte truncation); legacy hashes upgraded at login
-- JWT (HS256) with separate access/refresh tokens; refresh re-checks the account is active
-- Rate limits: 5/min per IP for auth, 10/min **per user** for chat; proxy headers trusted only when configured
-- Input sanitising and prompt-injection refusal; HTML escaped again before rendering
-- Foreign keys and cascades enforced by the database (including SQLite)
-- The app refuses to start in production with the default JWT secret
-- Dependencies audited in CI (`pip-audit`, `npm audit`); Dependabot opens weekly update PRs
+Fixing the index (it was matching words in treatment advice rather than symptoms) lifted these from 62.8% and 73.3%. CI fails if they drop.
 
-**Known limitation:** tokens are kept in `localStorage`, which an XSS flaw could read. Production deployments should move them to `httpOnly` cookies.
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'background':'#050505','primaryColor':'#140a20','primaryTextColor':'#f4effa','primaryBorderColor':'#6420a8','lineColor':'#c7a8f0','edgeLabelBackground':'#050505','fontFamily':'Georgia, serif'}}}%%
+flowchart LR
+    push([push / PR]) --> BL[Backend lint] --> BT[Backend tests<br/>coverage ≥ 90%<br/>retrieval accuracy]
+    push --> FL[Frontend lint,<br/>types, unit tests]
+    push --> AU[Dependency audits<br/>pip-audit, npm audit]
+    BT --> E2E[End-to-end<br/>browser + API + DB]
+    FL --> E2E
+```
 
----
+### Security
 
-## Testing
+- Passwords are SHA-256 pre-hashed, then bcrypt (no 72-byte truncation); older hashes upgrade at the next login
+- JWT access and refresh tokens with a `type` claim; refresh re-checks that the account is active
+- Rate limits: 5/min per IP for sign-in, 10/min **per user** for chat; proxy headers trusted only when configured
+- Input sanitising, prompt-injection refusal, and HTML escaped again before rendering
+- Foreign keys and cascades enforced by the database, SQLite included
+- The API refuses to start in production with the default secret
+- Dependabot proposes updates after a 14-day cooldown; CI audits every dependency
 
-| Suite | Count | Command |
-|---|---|---|
-| Backend unit, API and integration | 361 | `cd backend && pytest` |
-| Frontend unit | 34 | `cd frontend && npm test` |
-| End-to-end (browser + API + database) | 26 | `cd frontend && npm run build && npm run e2e` |
-
-Backend line coverage is 92% (CI floor 90%). Deprecation warnings fail the backend suite.
-
-### Continuous integration
-
-Every push runs: backend lint and format, backend tests with coverage, retrieval accuracy, dependency audits for both stacks, frontend lint, type check and unit tests, and the Playwright end-to-end suite against a production build.
-
----
+**Known limitation:** tokens are kept in `localStorage`, which an XSS flaw could read. A production deployment should move them to `httpOnly` cookies.
 
 ## API
 
-Interactive documentation: http://localhost:8000/docs
+Interactive docs: **http://localhost:8000/docs**. All timestamps are UTC with an explicit offset.
+
+<details>
+<summary><b>Endpoints</b></summary>
 
 | Method | Endpoint | Description | Auth |
-|---|---|---|---|
-| POST | `/api/v1/auth/register` | Create an account | – |
-| POST | `/api/v1/auth/login` | Sign in, receive tokens | – |
-| POST | `/api/v1/auth/refresh` | New token pair from `{"refresh_token": ...}` | – |
+|:--|:--|:--|:--|
+| POST | `/api/v1/auth/register` | Create an account | |
+| POST | `/api/v1/auth/login` | Sign in, receive tokens | |
+| POST | `/api/v1/auth/refresh` | New token pair from `{"refresh_token": ...}` | |
 | GET | `/api/v1/auth/me` | Current user | Bearer |
 | POST | `/api/v1/chat/message` | Send a message, receive a graded answer | Bearer |
-| GET | `/api/v1/chat/sessions` | Past conversations, most recent activity first | Bearer |
+| GET | `/api/v1/chat/sessions` | Conversations, most recent activity first | Bearer |
 | GET | `/api/v1/chat/sessions/{id}/messages` | Messages of one conversation | Bearer |
-| GET / POST / PUT / DELETE | `/api/v1/health-profile/` | Health profile (PUT: null clears a field) | Bearer |
+| GET POST PUT DELETE | `/api/v1/health-profile/` | Health profile (PUT: `null` clears a field) | Bearer |
 | GET | `/api/v1/analytics/overview` | Totals across the server | Bearer |
 | GET | `/api/v1/analytics/my-stats` | The caller's own totals | Bearer |
 | GET | `/api/v1/analytics/triage-distribution` | Answers per level | Bearer |
 | GET | `/api/v1/analytics/daily-usage?days=1..90` | Messages per day | Bearer |
 | GET | `/api/v1/analytics/rag-index` | Library size | Bearer |
 
-All timestamps are UTC with an explicit offset.
+</details>
 
----
-
-## Project structure
+<details>
+<summary><b>Project structure</b></summary>
 
 ```
 CareNexus/
 ├── backend/
 │   ├── app/
 │   │   ├── api/routes/        auth, chat, health_profile, analytics
-│   │   ├── core/              config, database, security middleware, rate limiter, sanitiser
+│   │   ├── core/              config, database, middleware, rate limiter, sanitiser
 │   │   │   └── triage/        engine, emergency rules, symptom parser, prompts
 │   │   ├── rag/               knowledge base (49 conditions), vectoriser, synonyms, retriever
-│   │   ├── models/            SQLAlchemy models
-│   │   ├── schemas/           Pydantic request/response models
+│   │   ├── models/ schemas/   SQLAlchemy models, Pydantic schemas
 │   │   └── services/          auth, chat, profile, analytics, LLM
 │   ├── scripts/               eval_retrieval.py
 │   └── tests/                 pytest suites + labelled retrieval data
 ├── frontend/
-│   ├── src/app/               pages: home, chat, dashboard, profile, about, login, register
+│   ├── src/app/               pages
 │   ├── src/components/        navbar, chat sidebar, messages, 3D body map
-│   ├── src/lib/               API client, design tokens, triage levels, helpers (+ unit tests)
-│   └── e2e/                   Playwright end-to-end tests
-├── docs/architecture.md
-├── run.py, start.ps1          one-command start
-└── docker-compose.yml
+│   ├── src/lib/               API client, design tokens, triage levels (+ unit tests)
+│   ├── e2e/                   Playwright tests
+│   └── scripts/readme/        generators for this README's artwork
+├── docs/                      architecture.md, generated assets
+├── .github/workflows/         ci.yml, readme-assets.yml
+└── run.py, start.ps1, docker-compose.yml
 ```
+
+</details>
+
+<details>
+<summary><b>How this README keeps itself current</b></summary>
+
+The banner, stats card, screenshots and demo GIF are generated, not drawn by hand:
+
+| Script | Produces | From |
+|:--|:--|:--|
+| [`banner.mjs`](frontend/scripts/readme/banner.mjs) | animated SVG header | the app's fonts and colours, embedded |
+| [`stats.mjs`](frontend/scripts/readme/stats.mjs) | the stats card | pytest, coverage, Vitest, Playwright, retrieval and audit reports |
+| [`capture.mjs`](frontend/scripts/readme/capture.mjs) | screenshots, demo GIF | Playwright driving the running app, ffmpeg |
+
+[`readme-assets.yml`](.github/workflows/readme-assets.yml) runs them weekly and after relevant changes, and commits the results only when something actually changed.
+
+</details>
 
 ## Tech stack
 
 | Layer | Technology |
-|---|---|
-| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS 4, three.js / React Three Fiber |
-| Backend | FastAPI, SQLAlchemy 2 (async), Pydantic 2 |
-| Database | SQLite (default), PostgreSQL (production) |
+|:--|:--|
+| Interface | Next.js 16, React 19, TypeScript, Tailwind CSS 4, three.js with React Three Fiber |
+| Service | FastAPI, SQLAlchemy 2 (async), Pydantic 2, PyJWT, bcrypt |
+| Data | SQLite (default), PostgreSQL (production) |
 | Triage | Rules, TF-IDF retrieval, optional Google Gemini |
-| Testing | pytest, Vitest, Playwright |
-| Delivery | GitHub Actions, Docker |
-
----
+| Quality | pytest, Vitest, Playwright, Ruff, ESLint, pip-audit, npm audit |
+| Delivery | GitHub Actions, Dependabot, Docker |
 
 ## Disclaimer
 
 CareNexus is a final-year capstone project. It gives general health information and is **not** a substitute for professional medical advice, diagnosis or treatment. In an emergency, call your local emergency number.
 
-## License
-
-[MIT](LICENSE) — built by [Sarthak Saxena](https://github.com/sarthaksaxenaa)
+<div align="center"><sub>MIT licensed · built by <a href="https://github.com/sarthaksaxenaa">Sarthak Saxena</a></sub></div>
