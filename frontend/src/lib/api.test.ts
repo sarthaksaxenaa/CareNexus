@@ -37,7 +37,9 @@ describe("ApiClient 401 handling", () => {
 
     expect(result).toEqual({ ok: true });
     expect(fetchMock).toHaveBeenCalledTimes(3);
-    expect(String(fetchMock.mock.calls[1][0])).toContain("/api/v1/auth/refresh?refresh_token=good-refresh");
+    const [refreshUrl, refreshInit] = fetchMock.mock.calls[1];
+    expect(String(refreshUrl)).toMatch(/\/api\/v1\/auth\/refresh$/);
+    expect(JSON.parse(refreshInit.body)).toEqual({ refresh_token: "good-refresh" });
     expect(fetchMock.mock.calls[2][1].headers.Authorization).toBe("Bearer new-access");
     expect(storage.getItem("access_token")).toBe("new-access");
     expect(storage.getItem("refresh_token")).toBe("new-refresh");

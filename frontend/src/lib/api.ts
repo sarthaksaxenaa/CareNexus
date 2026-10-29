@@ -110,10 +110,11 @@ export class ApiClient {
     const refresh = typeof window !== "undefined" ? localStorage.getItem("refresh_token") : null;
     if (!refresh) return false;
     try {
-      const response = await fetch(
-        `${API_URL}/api/v1/auth/refresh?refresh_token=${encodeURIComponent(refresh)}`,
-        { method: "POST" }
-      );
+      const response = await fetch(`${API_URL}/api/v1/auth/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh_token: refresh }),
+      });
       if (!response.ok) return false;
       const tokens = (await response.json()) as { access_token: string; refresh_token: string };
       this.setTokens(tokens.access_token, tokens.refresh_token);

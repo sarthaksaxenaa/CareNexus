@@ -9,6 +9,7 @@ from app.core.rate_limiter import AUTH_RATE_LIMIT, get_client_ip, get_rate_limit
 from app.models.user import User
 from app.schemas.auth import (
     AuthResponse,
+    RefreshTokenRequest,
     TokenResponse,
     UserLoginRequest,
     UserRegisterRequest,
@@ -20,6 +21,8 @@ from app.services.auth_service import (
     create_refresh_token,
     create_user,
     get_user_by_email,
+    get_user_by_id,
+    parse_user_id,
     verify_token,
 )
 
@@ -98,17 +101,30 @@ async def get_me(current_user: User = Depends(get_current_user)):
 
 
 @router.post("/refresh", response_model=TokenResponse)
-async def refresh_token(refresh_token: str, db: AsyncSession = Depends(get_db)):
-    """Refresh an expired access token using a valid refresh token."""
-    token_data = verify_token(refresh_token, token_type="refresh")
+async def refresh_token(
+    request: RefreshTokenRequest,
+    http_request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """Exchange a valid refresh token for a new access/refresh pair."""
+    get_rate_limiter().check(get_client_ip(http_request), AUTH_RATE_LIMIT)
 
-    if token_data is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired refresh token",
-        )
+    invalid = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid or expired refresh token",
+    )
+    token_data = verify_token(request.refresh_token, token_type="refresh")
+    user_id = parse_user_id(token_data.sub) if token_data else None
+    if user_id is None:
+        raise invalid
+
+    # A token stays cryptographically valid after the account is deleted or
+    # deactivated, so check the user still exists and is allowed in.
+    user = await get_user_by_id(db, user_id)
+    if user is None or not user.is_active:
+        raise invalid
 
     return TokenResponse(
-        access_token=create_access_token(token_data.sub),
-        refresh_token=create_refresh_token(token_data.sub),
+        access_token=create_access_token(str(user.id)),
+        refresh_token=create_refresh_token(str(user.id)),
     )

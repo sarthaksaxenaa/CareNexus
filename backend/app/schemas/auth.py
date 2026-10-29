@@ -24,6 +24,11 @@ class UserLoginRequest(BaseModel):
     password: str
 
 
+class RefreshTokenRequest(BaseModel):
+    # In the body, never the URL: query strings end up in access logs and history.
+    refresh_token: str = Field(..., min_length=1, max_length=4096)
+
+
 # ─── Response Schemas ─────────────────────────────
 
 
