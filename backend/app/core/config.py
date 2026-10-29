@@ -57,8 +57,10 @@ class Settings(BaseSettings):
     LLM_MAX_TOKENS: int = 1000
 
     # ─── Rate Limiting ───────────────────────────────────────
-    RATE_LIMIT_CHAT: int = 10  # requests per minute
-    RATE_LIMIT_AUTH: int = 5  # requests per minute
+    RATE_LIMIT_CHAT: int = 10  # requests per minute, per user
+    RATE_LIMIT_AUTH: int = 5  # requests per minute, per IP
+    # Only enable behind a reverse proxy you control that sets X-Forwarded-For.
+    TRUST_PROXY_HEADERS: bool = False
 
     # ─── RAG Pipeline ────────────────────────────────────────
     RAG_TOP_K: int = 3
