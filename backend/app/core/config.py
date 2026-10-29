@@ -7,6 +7,12 @@ from pydantic_settings import BaseSettings
 
 logger = logging.getLogger(__name__)
 
+# Published in the public repository, so it is not a secret. Used only as a
+# development convenience; production must override it.
+_INSECURE_SECRET_DEFAULT = "change-this-in-production-use-a-real-secret-key"
+_PRODUCTION_ENVIRONMENTS = {"production", "prod"}
+_MIN_SECRET_LENGTH = 32  # 256 bits is the HS256 key-size recommendation
+
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables.
@@ -37,7 +43,7 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
 
     # ─── JWT Authentication ──────────────────────────────────
-    SECRET_KEY: str = "change-this-in-production-use-a-real-secret-key"
+    SECRET_KEY: str = _INSECURE_SECRET_DEFAULT
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     ALGORITHM: str = "HS256"
@@ -59,6 +65,21 @@ class Settings(BaseSettings):
     RAG_THRESHOLD: float = 0.08
 
     model_config = ConfigDict(env_file=".env", case_sensitive=True)
+
+    @model_validator(mode="after")
+    def _require_real_secret_in_production(self) -> "Settings":
+        """Fail fast: never sign production JWTs with a publicly known key."""
+        if self.ENVIRONMENT.strip().lower() in _PRODUCTION_ENVIRONMENTS and (
+            self.SECRET_KEY == _INSECURE_SECRET_DEFAULT
+            or len(self.SECRET_KEY) < _MIN_SECRET_LENGTH
+        ):
+            raise ValueError(
+                "SECRET_KEY must be set to a unique value of at least "
+                f"{_MIN_SECRET_LENGTH} characters when ENVIRONMENT is production. "
+                'Generate one with: python -c "import secrets; '
+                'print(secrets.token_urlsafe(48))"'
+            )
+        return self
 
     @model_validator(mode="after")
     def _log_llm_status(self) -> "Settings":
