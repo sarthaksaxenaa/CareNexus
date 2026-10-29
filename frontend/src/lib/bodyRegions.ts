@@ -76,23 +76,48 @@ export function resolveTorsoRegion(
   return zone === "upper" ? "chest" : "abdomen";
 }
 
+const tagFor = (region: BodyRegion) => `(${region.label.toLowerCase()})`;
+
+/** Replace the first case-insensitive occurrence of `find`; null if absent. */
+function replaceOnce(text: string, find: string, replacement: string): string | null {
+  const index = text.toLowerCase().indexOf(find.toLowerCase());
+  if (index === -1) return null;
+  return text.slice(0, index) + replacement + text.slice(index + find.length);
+}
+
 /**
  * Merge a clicked region into the chat draft.
  *
- * - empty draft  -> the region phrase, with a trailing space to keep typing
- * - existing text -> appended in parentheses; the user's words are never lost
- * - same region twice -> unchanged (idempotent)
+ * - empty draft        -> the region phrase, with a trailing space to keep typing
+ * - existing text      -> appended in parentheses; the user's words are never lost
+ * - same region again  -> unchanged (idempotent)
+ * - changed their mind -> if `previous` is still in the draft, it is replaced
+ *                         in place, so a mis-click does not leave both regions
  */
-export function applyRegionToDraft(draft: string, id: RegionId): string {
+export function applyRegionToDraft(
+  draft: string,
+  id: RegionId,
+  previous: RegionId | null = null,
+): string {
   const region = getRegion(id);
-  const trimmed = draft.trim();
 
+  if (previous !== null && previous !== id) {
+    const before = getRegion(previous);
+    const swapped =
+      replaceOnce(draft, before.phrase, region.phrase) ??
+      replaceOnce(draft, tagFor(before), tagFor(region));
+    if (swapped !== null) return swapped;
+  }
+
+  const trimmed = draft.trim();
   if (trimmed === "") return `${region.phrase} `;
 
   const lower = trimmed.toLowerCase();
-  const tag = `(${region.label.toLowerCase()})`;
-  if (lower.includes(region.phrase.toLowerCase()) || lower.includes(tag)) {
+  if (
+    lower.includes(region.phrase.toLowerCase()) ||
+    lower.includes(tagFor(region))
+  ) {
     return draft;
   }
-  return `${draft.trimEnd()} ${tag} `;
+  return `${draft.trimEnd()} ${tagFor(region)} `;
 }

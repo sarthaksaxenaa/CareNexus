@@ -108,9 +108,10 @@ export default function ChatPage() {
 
   /** A body-map click seeds the draft; the user keeps typing the symptom. */
   const handleRegionSelect = (region: RegionId) => {
+    const previous = selectedRegion;
     setSelectedRegion(region);
     setShowQuickActions(false);
-    setInput((draft) => applyRegionToDraft(draft, region));
+    setInput((draft) => applyRegionToDraft(draft, region, previous));
     inputRef.current?.focus();
   };
 
