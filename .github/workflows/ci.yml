@@ -60,7 +60,7 @@ jobs:
           TESTING: "true"
       - name: Retrieval accuracy
         run: python -m scripts.eval_retrieval
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: backend-coverage
@@ -150,7 +150,7 @@ jobs:
         run: npm run e2e
         env:
           E2E_PYTHON: python
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-report
