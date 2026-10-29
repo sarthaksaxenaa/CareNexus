@@ -1,0 +1,9 @@
+[run]
+source = app
+# SQLAlchemy's async engine runs code inside greenlets; without this,
+# lines after an `await db...` call are reported as never executed.
+concurrency = greenlet, thread
+
+[report]
+show_missing = true
+skip_covered = true
