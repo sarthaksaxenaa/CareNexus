@@ -90,3 +90,28 @@ describe("ApiClient 401 handling", () => {
     expect(refreshCalls).toBe(1);
   });
 });
+
+describe("ApiClient error messages", () => {
+  beforeEach(() => {
+    vi.stubGlobal("window", { location: { assign: vi.fn(), pathname: "/register" } });
+    vi.stubGlobal("localStorage", memoryStorage());
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("turns a validation error into a readable sentence", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        json(422, { message: "Invalid request data", detail: [{ field: "body.email", message: "value is not a valid email address" }] }),
+      ),
+    );
+    await expect(new ApiClient().request("/api/v1/auth/register", { method: "POST" })).rejects.toThrow(
+      "Email: Value is not a valid email address",
+    );
+  });
+
+  it("reports an unreachable server instead of 'Failed to fetch'", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Failed to fetch")));
+    await expect(new ApiClient().request("/api/v1/chat/sessions")).rejects.toThrow(/Cannot reach the CareNexus server/);
+  });
+});
