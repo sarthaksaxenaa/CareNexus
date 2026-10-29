@@ -24,25 +24,122 @@ from dataclasses import dataclass, field
 from app.rag.knowledge_base import ALL_CONDITIONS, MedicalCondition
 from app.rag.synonyms import expand_synonyms
 
-
 # ─── Stop Words (medical-context-aware) ─────────────────────────────────────
 
-STOP_WORDS: frozenset[str] = frozenset({
-    "a", "an", "the", "is", "are", "was", "were", "be", "been", "being",
-    "have", "has", "had", "do", "does", "did", "will", "would", "could",
-    "should", "may", "might", "shall", "can", "need", "must",
-    "i", "me", "my", "we", "our", "you", "your", "he", "she", "it",
-    "they", "them", "their", "this", "that", "these", "those",
-    "in", "on", "at", "to", "for", "of", "with", "by", "from",
-    "and", "or", "but", "not", "no", "nor", "so", "if", "then",
-    "than", "too", "very", "just", "about", "above", "after", "before",
-    "between", "during", "into", "through", "over", "under",
-    "again", "further", "once", "here", "there", "when", "where",
-    "what", "which", "who", "whom", "how", "all", "each", "every",
-    "both", "few", "more", "most", "other", "some", "such",
-    "only", "own", "same", "also", "any", "because", "as",
-    "until", "while", "am", "up", "down", "out",
-})
+STOP_WORDS: frozenset[str] = frozenset(
+    {
+        "a",
+        "an",
+        "the",
+        "is",
+        "are",
+        "was",
+        "were",
+        "be",
+        "been",
+        "being",
+        "have",
+        "has",
+        "had",
+        "do",
+        "does",
+        "did",
+        "will",
+        "would",
+        "could",
+        "should",
+        "may",
+        "might",
+        "shall",
+        "can",
+        "need",
+        "must",
+        "i",
+        "me",
+        "my",
+        "we",
+        "our",
+        "you",
+        "your",
+        "he",
+        "she",
+        "it",
+        "they",
+        "them",
+        "their",
+        "this",
+        "that",
+        "these",
+        "those",
+        "in",
+        "on",
+        "at",
+        "to",
+        "for",
+        "of",
+        "with",
+        "by",
+        "from",
+        "and",
+        "or",
+        "but",
+        "not",
+        "no",
+        "nor",
+        "so",
+        "if",
+        "then",
+        "than",
+        "too",
+        "very",
+        "just",
+        "about",
+        "above",
+        "after",
+        "before",
+        "between",
+        "during",
+        "into",
+        "through",
+        "over",
+        "under",
+        "again",
+        "further",
+        "once",
+        "here",
+        "there",
+        "when",
+        "where",
+        "what",
+        "which",
+        "who",
+        "whom",
+        "how",
+        "all",
+        "each",
+        "every",
+        "both",
+        "few",
+        "more",
+        "most",
+        "other",
+        "some",
+        "such",
+        "only",
+        "own",
+        "same",
+        "also",
+        "any",
+        "because",
+        "as",
+        "until",
+        "while",
+        "am",
+        "up",
+        "down",
+        "out",
+    }
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -87,8 +184,7 @@ class MedicalVectorizer:
         """Build TF-IDF index from all medical conditions."""
         # Step 1: Create documents from conditions
         self._documents = [
-            self._condition_to_document(condition)
-            for condition in self._conditions
+            self._condition_to_document(condition) for condition in self._conditions
         ]
 
         # Step 2: Compute IDF (Inverse Document Frequency)
@@ -153,10 +249,7 @@ class MedicalVectorizer:
         text = text.lower()
         text = re.sub(r"[^a-z0-9\s]", " ", text)
         tokens = text.split()
-        return [
-            token for token in tokens
-            if token not in STOP_WORDS and len(token) > 1
-        ]
+        return [token for token in tokens if token not in STOP_WORDS and len(token) > 1]
 
     def _query_to_vector(self, query: str) -> dict[str, float]:
         """Convert a query string to a TF-IDF vector with synonym expansion."""
@@ -174,9 +267,7 @@ class MedicalVectorizer:
         return query_vec
 
     @staticmethod
-    def _cosine_similarity(
-        vec_a: dict[str, float], vec_b: dict[str, float]
-    ) -> float:
+    def _cosine_similarity(vec_a: dict[str, float], vec_b: dict[str, float]) -> float:
         """Compute cosine similarity between two sparse vectors."""
         # Find common terms
         common_terms = set(vec_a.keys()) & set(vec_b.keys())

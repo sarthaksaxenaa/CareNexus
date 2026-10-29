@@ -11,9 +11,8 @@ from app.rag.knowledge_base import (
     get_condition_by_id,
     get_conditions_by_category,
 )
-from app.rag.retriever import build_rag_context, retrieve, get_retrieval_stats
+from app.rag.retriever import build_rag_context, get_retrieval_stats, retrieve
 from app.rag.vectorizer import MedicalVectorizer, get_vectorizer
-
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # KNOWLEDGE BASE TESTS
@@ -109,8 +108,10 @@ class TestVectorizer:
         results = vectorizer.search("I have a bad headache", top_k=3)
         assert len(results) > 0
         condition_names = [c.name for c, _ in results]
-        assert any("headache" in name.lower() or "migraine" in name.lower()
-                    for name in condition_names)
+        assert any(
+            "headache" in name.lower() or "migraine" in name.lower()
+            for name in condition_names
+        )
 
     def test_search_chest_pain_returns_cardiovascular(self):
         """'chest pain' should prioritize cardiovascular conditions."""

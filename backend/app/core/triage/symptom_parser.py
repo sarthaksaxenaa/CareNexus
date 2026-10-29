@@ -8,7 +8,7 @@ Provides:
 """
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
 @dataclass(frozen=True, slots=True)
@@ -49,32 +49,104 @@ _DURATION_PATTERNS: list[tuple[re.Pattern, str, float]] = [
 
 # ─── Severity Modifiers ─────────────────────────────────────────────────────
 
-_SEVERE_WORDS = frozenset({
-    "severe", "extreme", "excruciating", "unbearable", "terrible",
-    "worst", "agonizing", "intense", "horrible", "awful", "very bad",
-    "really bad", "10 out of 10", "10/10", "9/10",
-})
+_SEVERE_WORDS = frozenset(
+    {
+        "severe",
+        "extreme",
+        "excruciating",
+        "unbearable",
+        "terrible",
+        "worst",
+        "agonizing",
+        "intense",
+        "horrible",
+        "awful",
+        "very bad",
+        "really bad",
+        "10 out of 10",
+        "10/10",
+        "9/10",
+    }
+)
 
-_MODERATE_WORDS = frozenset({
-    "moderate", "noticeable", "significant", "considerable", "persistent",
-    "constant", "ongoing", "getting worse", "worsening", "increasing",
-    "7/10", "8/10", "6/10",
-})
+_MODERATE_WORDS = frozenset(
+    {
+        "moderate",
+        "noticeable",
+        "significant",
+        "considerable",
+        "persistent",
+        "constant",
+        "ongoing",
+        "getting worse",
+        "worsening",
+        "increasing",
+        "7/10",
+        "8/10",
+        "6/10",
+    }
+)
 
-_MILD_WORDS = frozenset({
-    "mild", "slight", "minor", "little", "small", "tiny", "faint",
-    "barely", "not too bad", "manageable", "1/10", "2/10", "3/10",
-})
+_MILD_WORDS = frozenset(
+    {
+        "mild",
+        "slight",
+        "minor",
+        "little",
+        "small",
+        "tiny",
+        "faint",
+        "barely",
+        "not too bad",
+        "manageable",
+        "1/10",
+        "2/10",
+        "3/10",
+    }
+)
 
 # ─── Body Part Keywords ─────────────────────────────────────────────────────
 
-_BODY_PARTS = frozenset({
-    "head", "chest", "stomach", "abdomen", "back", "neck", "throat",
-    "arm", "leg", "knee", "ankle", "wrist", "shoulder", "hip",
-    "eye", "ear", "nose", "mouth", "skin", "face", "foot", "feet",
-    "hand", "finger", "toe", "elbow", "spine", "rib", "groin",
-    "temple", "forehead", "jaw", "pelvis", "thigh", "calf", "shin",
-})
+_BODY_PARTS = frozenset(
+    {
+        "head",
+        "chest",
+        "stomach",
+        "abdomen",
+        "back",
+        "neck",
+        "throat",
+        "arm",
+        "leg",
+        "knee",
+        "ankle",
+        "wrist",
+        "shoulder",
+        "hip",
+        "eye",
+        "ear",
+        "nose",
+        "mouth",
+        "skin",
+        "face",
+        "foot",
+        "feet",
+        "hand",
+        "finger",
+        "toe",
+        "elbow",
+        "spine",
+        "rib",
+        "groin",
+        "temple",
+        "forehead",
+        "jaw",
+        "pelvis",
+        "thigh",
+        "calf",
+        "shin",
+    }
+)
 
 # ─── Negation Patterns ──────────────────────────────────────────────────────
 
@@ -87,17 +159,59 @@ _NEGATION_PATTERN = re.compile(
 # ─── Symptom Phrase Extraction ───────────────────────────────────────────────
 
 _SYMPTOM_KEYWORDS: tuple[str, ...] = (
-    "headache", "fever", "cough", "pain", "ache", "nausea", "vomiting",
-    "diarrhea", "fatigue", "dizziness", "rash", "swelling", "bleeding",
-    "numbness", "tingling", "shortness of breath", "difficulty breathing",
-    "chest pain", "sore throat", "runny nose", "congestion", "chills",
-    "sweating", "weakness", "blurred vision", "itching", "burning",
-    "cramps", "bloating", "constipation", "heartburn", "wheezing",
-    "sneezing", "insomnia", "anxiety", "depression", "palpitations",
-    "weight loss", "weight gain", "loss of appetite", "hair loss",
-    "joint pain", "muscle pain", "back pain", "neck pain", "stomach pain",
-    "abdominal pain", "ear pain", "eye pain", "tooth pain",
-    "frequent urination", "blood in urine", "blood in stool",
+    "headache",
+    "fever",
+    "cough",
+    "pain",
+    "ache",
+    "nausea",
+    "vomiting",
+    "diarrhea",
+    "fatigue",
+    "dizziness",
+    "rash",
+    "swelling",
+    "bleeding",
+    "numbness",
+    "tingling",
+    "shortness of breath",
+    "difficulty breathing",
+    "chest pain",
+    "sore throat",
+    "runny nose",
+    "congestion",
+    "chills",
+    "sweating",
+    "weakness",
+    "blurred vision",
+    "itching",
+    "burning",
+    "cramps",
+    "bloating",
+    "constipation",
+    "heartburn",
+    "wheezing",
+    "sneezing",
+    "insomnia",
+    "anxiety",
+    "depression",
+    "palpitations",
+    "weight loss",
+    "weight gain",
+    "loss of appetite",
+    "hair loss",
+    "joint pain",
+    "muscle pain",
+    "back pain",
+    "neck pain",
+    "stomach pain",
+    "abdominal pain",
+    "ear pain",
+    "eye pain",
+    "tooth pain",
+    "frequent urination",
+    "blood in urine",
+    "blood in stool",
 )
 
 
@@ -227,9 +341,18 @@ def get_demographic_risk_factors(
             risks.append("Elderly patient — higher risk for complications")
 
     high_risk_conditions = [
-        "diabetes", "hypertension", "heart disease", "asthma", "copd",
-        "cancer", "hiv", "kidney disease", "liver disease", "immunocompromised",
-        "pregnant", "pregnancy",
+        "diabetes",
+        "hypertension",
+        "heart disease",
+        "asthma",
+        "copd",
+        "cancer",
+        "hiv",
+        "kidney disease",
+        "liver disease",
+        "immunocompromised",
+        "pregnant",
+        "pregnancy",
     ]
 
     if known_conditions:

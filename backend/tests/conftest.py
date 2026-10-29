@@ -10,7 +10,6 @@ Provides:
 import uuid
 from collections.abc import AsyncGenerator
 
-import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -102,9 +101,7 @@ async def registered_user(client: AsyncClient) -> dict:
 
 
 @pytest_asyncio.fixture()
-async def auth_client(
-    client: AsyncClient, registered_user: dict
-) -> AsyncClient:
+async def auth_client(client: AsyncClient, registered_user: dict) -> AsyncClient:
     """Authenticated HTTP client (Bearer token pre-set in headers)."""
     token = registered_user["tokens"]["access_token"]
     client.headers["Authorization"] = f"Bearer {token}"

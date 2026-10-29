@@ -29,7 +29,11 @@ router = APIRouter()
 @router.post(
     "/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED
 )
-async def register(request: UserRegisterRequest, http_request: Request, db: AsyncSession = Depends(get_db)):
+async def register(
+    request: UserRegisterRequest,
+    http_request: Request,
+    db: AsyncSession = Depends(get_db),
+):
     """Register a new user account."""
     # Rate limit check (per-IP, 5 req/min)
     get_rate_limiter().check(get_client_ip(http_request), AUTH_RATE_LIMIT)
@@ -59,7 +63,9 @@ async def register(request: UserRegisterRequest, http_request: Request, db: Asyn
 
 
 @router.post("/login", response_model=AuthResponse)
-async def login(request: UserLoginRequest, http_request: Request, db: AsyncSession = Depends(get_db)):
+async def login(
+    request: UserLoginRequest, http_request: Request, db: AsyncSession = Depends(get_db)
+):
     """Authenticate user and return JWT tokens."""
     # Rate limit check (per-IP, 5 req/min)
     get_rate_limiter().check(get_client_ip(http_request), AUTH_RATE_LIMIT)

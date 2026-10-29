@@ -99,18 +99,18 @@ def build_rag_context(query: str, top_k: int = 3) -> str:
     ]
 
     for i, result in enumerate(results, 1):
-        context_parts.append(
-            f"[{i}] {result.context_block}"
-        )
+        context_parts.append(f"[{i}] {result.context_block}")
         context_parts.append("")
 
-    context_parts.extend([
-        "═══ END MEDICAL KNOWLEDGE ═══",
-        "",
-        "INSTRUCTIONS: Use the above medical knowledge to inform your response. "
-        "Do NOT copy text verbatim — synthesize and adapt to the patient's specific situation. "
-        "Always recommend consulting a healthcare professional for proper diagnosis.",
-    ])
+    context_parts.extend(
+        [
+            "═══ END MEDICAL KNOWLEDGE ═══",
+            "",
+            "INSTRUCTIONS: Use the above medical knowledge to inform your response. "
+            "Do NOT copy text verbatim — synthesize and adapt to the patient's specific situation. "
+            "Always recommend consulting a healthcare professional for proper diagnosis.",
+        ]
+    )
 
     return "\n".join(context_parts)
 
@@ -146,7 +146,5 @@ def get_retrieval_stats() -> dict:
     return {
         "indexed_conditions": vectorizer.document_count,
         "vocabulary_size": vectorizer.vocabulary_size,
-        "categories": list(
-            {c.category for c in vectorizer._conditions}
-        ),
+        "categories": list({c.category for c in vectorizer._conditions}),
     }

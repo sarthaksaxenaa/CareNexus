@@ -224,7 +224,8 @@ def _fallback_response(
 
         # Escalate if multiple symptoms match (multi-symptom scoring)
         matched_symptoms = [
-            s for s in parsed.symptoms
+            s
+            for s in parsed.symptoms
             if any(s in cs.lower() for cs in condition.symptoms)
         ]
         if len(matched_symptoms) >= 3 and triage == TriageLevel.GREEN:
@@ -248,7 +249,9 @@ def _fallback_response(
             response_parts.append("")
 
         if condition.when_to_seek_help:
-            response_parts.append(f"🏥 **When to seek help:** {condition.when_to_seek_help}")
+            response_parts.append(
+                f"🏥 **When to seek help:** {condition.when_to_seek_help}"
+            )
             response_parts.append("")
 
         if condition.red_flags:
@@ -314,11 +317,22 @@ def _fallback_response(
 
     # Keyword-based fallback when RAG finds nothing
     severe_keywords = [
-        "severe", "unbearable", "worst", "can't breathe", "blood", "unconscious",
+        "severe",
+        "unbearable",
+        "worst",
+        "can't breathe",
+        "blood",
+        "unconscious",
     ]
     moderate_keywords = [
-        "fever", "pain", "cough", "headache", "vomiting",
-        "diarrhea", "rash", "swelling",
+        "fever",
+        "pain",
+        "cough",
+        "headache",
+        "vomiting",
+        "diarrhea",
+        "rash",
+        "swelling",
     ]
     mild_keywords = ["cold", "sneeze", "tired", "sore throat", "runny nose"]
 
