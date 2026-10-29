@@ -3,6 +3,7 @@
 import pytest
 from httpx import ASGITransport, AsyncClient
 
+from app.core.config import settings
 from app.main import app
 from app.services.auth_service import hash_password, verify_password
 
@@ -21,7 +22,7 @@ async def test_health_check():
     data = response.json()
     assert data["status"] == "healthy"
     assert data["service"] == "carenexus-api"
-    assert data["version"] == "0.5.0"
+    assert data["version"] == settings.APP_VERSION
 
 
 # ─── Route Registration ───────────────────────────────────
