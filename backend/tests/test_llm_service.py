@@ -212,3 +212,50 @@ class TestErrorHandling:
         assert response.parsed is not None
         assert response.parsed["triage_level"] == "green"
         assert attempt_count == 3
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PROVIDER / MODEL SELECTION
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class TestModelSelection:
+    """Each provider gets its own default model; LLM_MODEL overrides it."""
+
+    @pytest.fixture(autouse=True)
+    def _fresh(self, monkeypatch):
+        from app.core.config import settings
+
+        monkeypatch.setattr(settings, "LLM_MODEL", "")
+        monkeypatch.setattr(settings, "GEMINI_API_KEY", "")
+        monkeypatch.setattr(settings, "OPENAI_API_KEY", "")
+        reset_llm_service()
+        yield settings
+        reset_llm_service()
+
+    def test_openai_default_is_an_openai_model(self, _fresh, monkeypatch):
+        from app.services.llm_service import DEFAULT_OPENAI_MODEL, get_llm_service
+
+        monkeypatch.setattr(_fresh, "LLM_PROVIDER", "openai")
+        monkeypatch.setattr(_fresh, "OPENAI_API_KEY", "sk-test")
+        service = get_llm_service()
+        assert isinstance(service, OpenAIService)
+        assert service._model == DEFAULT_OPENAI_MODEL
+
+    def test_gemini_default_is_not_a_retired_model(self, _fresh, monkeypatch):
+        from app.services.llm_service import DEFAULT_GEMINI_MODEL, get_llm_service
+
+        monkeypatch.setattr(_fresh, "LLM_PROVIDER", "gemini")
+        monkeypatch.setattr(_fresh, "GEMINI_API_KEY", "g-test")
+        service = get_llm_service()
+        assert isinstance(service, GeminiService)
+        assert service._model == DEFAULT_GEMINI_MODEL
+        assert not DEFAULT_GEMINI_MODEL.startswith("gemini-2.0")
+
+    def test_explicit_model_wins(self, _fresh, monkeypatch):
+        from app.services.llm_service import get_llm_service
+
+        monkeypatch.setattr(_fresh, "LLM_PROVIDER", "gemini")
+        monkeypatch.setattr(_fresh, "GEMINI_API_KEY", "g-test")
+        monkeypatch.setattr(_fresh, "LLM_MODEL", "gemini-custom")
+        assert get_llm_service()._model == "gemini-custom"

@@ -27,6 +27,11 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
+# Per-provider defaults, used when LLM_MODEL is left empty. gemini-2.0-flash
+# was shut down on 2026-06-01; Google lists gemini-3.6-flash as its successor.
+DEFAULT_GEMINI_MODEL = "gemini-3.6-flash"
+DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # DATA MODELS
@@ -216,7 +221,7 @@ class GeminiService(LLMService):
     def __init__(
         self,
         api_key: str,
-        model: str = "gemini-2.0-flash",
+        model: str = DEFAULT_GEMINI_MODEL,
         retry_config: RetryConfig | None = None,
     ) -> None:
         super().__init__(retry_config)
@@ -292,7 +297,7 @@ class OpenAIService(LLMService):
     def __init__(
         self,
         api_key: str,
-        model: str = "gpt-4o-mini",
+        model: str = DEFAULT_OPENAI_MODEL,
         retry_config: RetryConfig | None = None,
     ) -> None:
         super().__init__(retry_config)
@@ -364,15 +369,15 @@ def get_llm_service() -> LLMService | None:
     if settings.LLM_PROVIDER == "gemini" and settings.GEMINI_API_KEY:
         _llm_service = GeminiService(
             api_key=settings.GEMINI_API_KEY,
-            model=settings.LLM_MODEL or "gemini-2.0-flash",
+            model=settings.LLM_MODEL or DEFAULT_GEMINI_MODEL,
         )
-        logger.info(f"LLM service initialized: Gemini ({settings.LLM_MODEL})")
+        logger.info(f"LLM service initialized: Gemini ({_llm_service._model})")
     elif settings.LLM_PROVIDER == "openai" and settings.OPENAI_API_KEY:
         _llm_service = OpenAIService(
             api_key=settings.OPENAI_API_KEY,
-            model=settings.LLM_MODEL or "gpt-4o-mini",
+            model=settings.LLM_MODEL or DEFAULT_OPENAI_MODEL,
         )
-        logger.info(f"LLM service initialized: OpenAI ({settings.LLM_MODEL})")
+        logger.info(f"LLM service initialized: OpenAI ({_llm_service._model})")
     else:
         logger.info("No LLM API key configured — using rule-based fallback only")
         return None
