@@ -240,23 +240,23 @@ def _fallback_response(
             f"Based on the symptoms you've described, this could be consistent with "
             f"**{condition.name}** ({condition.category}).",
             "",
-            f"📋 **About this condition:** {condition.description}",
+            f"**About this condition:** {condition.description}",
             "",
         ]
 
         if condition.first_aid:
-            response_parts.append(f"🩹 **Self-care guidance:** {condition.first_aid}")
+            response_parts.append(f"**Self-care guidance:** {condition.first_aid}")
             response_parts.append("")
 
         if condition.when_to_seek_help:
             response_parts.append(
-                f"🏥 **When to seek help:** {condition.when_to_seek_help}"
+                f"**When to seek help:** {condition.when_to_seek_help}"
             )
             response_parts.append("")
 
         if condition.red_flags:
             response_parts.append(
-                "🚨 **Watch for these warning signs:** "
+                "**Watch for these warning signs:** "
                 + ", ".join(condition.red_flags[:4])
             )
             response_parts.append("")
@@ -279,18 +279,18 @@ def _fallback_response(
 
         # Add risk factor warnings
         if risk_factors:
-            response_parts.append("⚠️ **Risk factors noted:**")
+            response_parts.append("**Risk factors noted:**")
             for rf in risk_factors[:3]:
                 response_parts.append(f"  • {rf}")
             response_parts.append(
-                "  → Consider seeking medical advice sooner due to these risk factors."
+                "Consider seeking medical advice sooner due to these risk factors."
             )
             response_parts.append("")
 
         # Add severity context
         if parsed.severity_modifier == "severe":
             response_parts.append(
-                "🔴 **You described your symptoms as severe.** "
+                "**You described your symptoms as severe.** "
                 "Please consider seeking prompt medical attention."
             )
             response_parts.append("")
@@ -299,13 +299,13 @@ def _fallback_response(
         if len(rag_results) > 1:
             other_names = [r.condition.name for r in rag_results[1:]]
             response_parts.append(
-                f"💡 **Other possibilities to discuss with your doctor:** "
+                f"**Other possibilities to discuss with your doctor:** "
                 f"{', '.join(other_names)}"
             )
             response_parts.append("")
 
         response_parts.append(
-            "⚕️ *Disclaimer: This is not medical advice. Please consult a "
+            "*Disclaimer: This is not medical advice. Please consult a "
             "healthcare professional for proper diagnosis and treatment.*"
         )
 
@@ -368,7 +368,7 @@ def _fallback_response(
 
     return {
         "response": advice
-        + "\n\n⚕️ *Disclaimer: This is not medical advice. Please consult a healthcare professional for proper diagnosis and treatment.*",
+        + "\n\n*Disclaimer: This is not medical advice. Please consult a healthcare professional for proper diagnosis and treatment.*",
         "triage_level": triage,
         "sources": "CareNexus rule-based triage",
     }

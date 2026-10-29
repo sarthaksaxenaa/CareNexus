@@ -119,3 +119,21 @@ async def test_analyze_normal_uses_fallback():
         TriageLevel.NONE,
     ]
     assert result["response"] is not None
+
+
+def test_answers_contain_no_emoji():
+    """Answers are plain text; the interface adds its own triage styling."""
+    import re
+
+    from app.core.triage.engine import _fallback_response
+    from app.core.triage.red_flags import RED_FLAG_PATTERNS
+    from app.core.triage.symptom_parser import parse_symptoms
+
+    emoji = re.compile("[\U0001f300-\U0001faff☀-➿]")
+    texts = [p["message"] for p in RED_FLAG_PATTERNS]
+    for q in ["I have a persistent headache", "fever and chills for 9 days, severe"]:
+        texts.append(
+            _fallback_response(q, parse_symptoms(q), ["Age over 65"])["response"]
+        )
+    for text in texts:
+        assert not emoji.search(text), text[:80]
