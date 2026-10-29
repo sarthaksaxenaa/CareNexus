@@ -5,6 +5,7 @@ import { useState, useSyncExternalStore } from "react";
 import BodyRegionList from "@/components/BodyRegionList";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { getRegion, type RegionId } from "@/lib/bodyRegions";
+import { TRACKED } from "@/lib/styles";
 
 // three.js touches `window`, so it can only render in the browser. Loading it
 // lazily with ssr:false also keeps ~1 MB of 3D code out of the initial bundle
@@ -80,17 +81,17 @@ export default function BodyMapPanel({ selected, onSelect }: BodyMapPanelProps) 
   const listView = <BodyRegionList selected={selected} onSelect={onSelect} />;
 
   return (
-    <section aria-label="Body map" className="flex h-full flex-col gap-3 p-4">
+    <section aria-label="Body map" className="flex h-full flex-col gap-4 p-5 pt-16 lg:pt-5">
       <div>
-        <h3 className="text-sm font-semibold text-ink">Where does it hurt?</h3>
-        <p className="text-xs text-ink-4">
+        <h2 className="font-display text-2xl text-ink">Where does it hurt?</h2>
+        <p className="mt-1 text-sm font-light text-ink-4">
           {effective === "3d"
-            ? "Drag to rotate · click a body part"
-            : "Choose a body region"}
+            ? "Drag to turn the figure, then click a body part."
+            : "Choose a body region."}
         </p>
       </div>
 
-      <div role="tablist" aria-label="Body map view" className="grid grid-cols-2 gap-1 rounded-lg bg-abyss p-1">
+      <div role="tablist" aria-label="Body map view" className="flex gap-6 border-b border-edge-soft">
         {(["3d", "list"] as const).map((m) => {
           const disabled = m === "3d" && !can3D;
           return (
@@ -102,10 +103,10 @@ export default function BodyMapPanel({ selected, onSelect }: BodyMapPanelProps) 
               disabled={disabled}
               title={disabled ? "3D view is not available on this device" : undefined}
               onClick={() => setChosen(m)}
-              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-40 ${
+              className={`${TRACKED} -mb-px border-b py-2 transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-40 ${
                 effective === m
-                  ? "bg-amethyst/40 text-amethyst-200"
-                  : "text-ink-4 hover:text-ink-2"
+                  ? "border-lilac text-ink"
+                  : "border-transparent text-ink-4 hover:text-ink-2"
               }`}
             >
               {m === "3d" ? "3D view" : "List"}
@@ -114,7 +115,7 @@ export default function BodyMapPanel({ selected, onSelect }: BodyMapPanelProps) 
         })}
       </div>
 
-      <div className="min-h-0 flex-1 rounded-xl border border-edge-soft bg-void/60">
+      <div className="min-h-0 flex-1 overflow-hidden rounded-sm border border-edge-soft">
         {effective === "3d" ? (
           // If WebGL throws at render time, drop to the list instead of a blank panel.
           <ErrorBoundary fallback={<div className="p-3">{listView}</div>}>
@@ -130,7 +131,7 @@ export default function BodyMapPanel({ selected, onSelect }: BodyMapPanelProps) 
         )}
       </div>
 
-      <p className="text-xs text-ink-4" aria-live="polite">
+      <p className="text-sm font-light text-ink-3" aria-live="polite">
         {selected ? `Selected: ${getRegion(selected).label}` : "Nothing selected yet"}
       </p>
     </section>

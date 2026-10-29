@@ -19,12 +19,12 @@ import { resolveTorsoRegion, type RegionId } from "@/lib/bodyRegions";
 // Obsidian Amethyst, mirrored from the tokens in globals.css. three.js
 // materials cannot read CSS variables, so the hex values live here.
 const COLOR = {
-  base: "#34205a",
-  baseGlow: "#6b21a8",
-  hover: "#8b3fd1",
-  hoverGlow: "#7e22ce",
-  selected: "#a855f7",
-  selectedGlow: "#9333ea",
+  base: "#3d2c57",
+  baseGlow: "#2a0a4d",
+  hover: "#a77de6",
+  hoverGlow: "#6420a8",
+  selected: "#c7a8f0",
+  selectedGlow: "#8a4fd1",
 } as const;
 
 type ClickEvent = ThreeEvent<MouseEvent | PointerEvent>;
@@ -139,10 +139,12 @@ export default function BodyMapScene({
           });
         }}
       >
-        <ambientLight intensity={0.9} />
-        <directionalLight position={[3, 5, 4]} intensity={2.4} />
-        <pointLight position={[-2.5, 1.8, -2]} intensity={40} color="#a855f7" />
-        <pointLight position={[2.5, 0.5, 2]} intensity={18} color="#6b21a8" />
+        {/* Neutral key light shows the form; a lilac rim from behind gives the
+            amethyst edge without flooding every surface violet. */}
+        <ambientLight intensity={0.55} />
+        <directionalLight position={[3, 5, 4]} intensity={2.6} color="#f4effa" />
+        <pointLight position={[-2.5, 1.8, -2]} intensity={34} color="#c7a8f0" />
+        <pointLight position={[2.5, 0.5, 2]} intensity={10} color="#3b0a6b" />
 
         {/* Head and neck */}
         <Part {...common} regions={["head"]} resolve={fixed("head")} position={[0, 1.62, 0]}>
@@ -291,7 +293,7 @@ export default function BodyMapScene({
         {/* Decorative base ring (not interactive) */}
         <mesh rotation-x={-Math.PI / 2} position={[0, -0.17, 0]}>
           <ringGeometry args={[0.5, 0.54, 64]} />
-          <meshBasicMaterial color="#6b21a8" transparent opacity={0.55} />
+          <meshBasicMaterial color="#c7a8f0" transparent opacity={0.35} />
         </mesh>
 
         <OrbitControls

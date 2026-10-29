@@ -6,7 +6,7 @@
  * `font-display` (Cormorant Garamond) for headlines, `font-sans` (Jost) for
  * everything you read while using the app.
  *
- * Clinical triage colours live in TRIAGE_CONFIG (MessageBubble.tsx) and are
+ * Clinical triage colours live in `src/lib/triage.ts` and are
  * intentionally NOT amethyst — severity must stay universally legible.
  */
 

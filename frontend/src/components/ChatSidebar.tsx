@@ -1,15 +1,30 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import type { ChatSessionInfo } from "@/lib/api";
-import { WORDMARK_ACCENT } from "@/lib/styles";
+import { TRACKED } from "@/lib/styles";
+import { parseApiDate } from "@/lib/time";
+import Wordmark from "./Wordmark";
 
 interface ChatSidebarProps {
   currentSessionId: string | null;
   onSelectSession: (sessionId: string) => void;
   onNewChat: () => void;
+}
+
+/** "Just now", "5 min ago", "3 h ago", "2 days ago", then a date. */
+function lastActive(dateStr: string): string {
+  const date = parseApiDate(dateStr);
+  const minutes = Math.floor((Date.now() - date.getTime()) / 60000);
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return days === 1 ? "Yesterday" : `${days} days ago`;
+  return date.toLocaleDateString();
 }
 
 export default function ChatSidebar({
@@ -19,156 +34,125 @@ export default function ChatSidebar({
 }: ChatSidebarProps) {
   const [sessions, setSessions] = useState<ChatSessionInfo[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  // Read after mount: localStorage is not available during server rendering.
+  const [signedIn, setSignedIn] = useState(false);
 
   useEffect(() => {
-    if (!api.isAuthenticated()) return;
+    const authed = api.isAuthenticated();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSignedIn(authed);
+    if (!authed) return;
 
-    // Cancellation flag: if the user switches session (or the component
-    // unmounts) before the request resolves, drop the stale response instead
-    // of overwriting newer state or updating an unmounted component.
+    // Drop a stale response if the session changes (or we unmount) first.
     let cancelled = false;
-
-    const loadSessions = async () => {
-      try {
-        const data = await api.getSessions();
+    api
+      .getSessions()
+      .then((data) => {
         if (!cancelled) setSessions(data);
-      } catch {
-        // silently fail — sidebar is non-critical
-      }
-    };
-
-    loadSessions();
+      })
+      .catch(() => {
+        /* the sidebar is non-critical */
+      });
     return () => {
       cancelled = true;
     };
   }, [currentSessionId]);
 
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMin = Math.floor(diffMs / 60000);
-    const diffHr = Math.floor(diffMs / 3600000);
-    const diffDay = Math.floor(diffMs / 86400000);
-
-    if (diffMin < 1) return "Just now";
-    if (diffMin < 60) return `${diffMin}m ago`;
-    if (diffHr < 24) return `${diffHr}h ago`;
-    if (diffDay < 7) return `${diffDay}d ago`;
-    return date.toLocaleDateString();
-  };
+  const close = () => setIsOpen(false);
 
   return (
     <>
-      {/* Mobile toggle button */}
+      {/* Small screens: toggle sits in the chat header row. */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="lg:hidden fixed top-20 left-2 z-50 p-2 bg-surface-2 rounded-lg shadow-lg shadow-black/50 border border-edge hover:border-amethyst-600 transition-colors duration-200"
-        aria-label="Toggle sidebar"
+        className="lg:hidden fixed left-3 top-3 z-50 grid h-10 w-10 place-items-center rounded-full border border-edge bg-void/80 backdrop-blur hover:border-lilac/60 transition-colors duration-200"
+        aria-label={isOpen ? "Close past checks" : "Open past checks"}
         aria-expanded={isOpen}
       >
-        <svg className="w-5 h-5 text-ink-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
+        <svg className="h-4 w-4 text-ink-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            strokeLinecap="round"
+            strokeWidth={1.5}
+            d={isOpen ? "M6 18L18 6M6 6l12 12" : "M4 7h16M4 12h16M4 17h10"}
+          />
         </svg>
       </button>
 
-      {/* Sidebar */}
       <aside
-        className={`fixed lg:relative top-0 left-0 h-full w-72 bg-surface-2 border-r border-edge flex flex-col z-40 transition-transform duration-300 ${
-          isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-edge-soft bg-void transition-transform duration-300 lg:relative lg:translate-x-0 ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {/* Header */}
-        <div className="p-4 border-b border-edge">
-          <Link href="/" className="flex items-center gap-2 mb-4">
-            <span className="text-xl">🏥</span>
-            <h1 className="text-lg font-bold tracking-tight text-ink">
-              Care<span className={WORDMARK_ACCENT}>Nexus</span>
-            </h1>
+        <div className="px-6 pb-6 pt-16 lg:pt-6">
+          <Link href="/" aria-label="CareNexus home">
+            <Wordmark className="text-[1.7rem]" />
           </Link>
           <button
-            onClick={() => { onNewChat(); setIsOpen(false); }}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white
-                       bg-gradient-to-r from-amethyst to-amethyst-500
-                       hover:from-amethyst-600 hover:to-amethyst-400
-                       shadow-lg shadow-amethyst/30 active:scale-[0.99]
-                       transition-all duration-200"
+            onClick={() => {
+              onNewChat();
+              close();
+            }}
+            className={`${TRACKED} mt-6 w-full rounded-full border border-edge py-3 text-ink transition-colors duration-200 hover:border-lilac/60 hover:bg-amethyst/30`}
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            New Health Check
+            New check
           </button>
         </div>
 
-        {/* Sessions list */}
-        <div className="flex-1 overflow-y-auto p-2">
-          <p className="px-3 py-2 text-xs font-medium text-ink-4 uppercase tracking-wider">
-            Recent Sessions
-          </p>
+        <nav aria-label="Past checks" className="min-h-0 flex-1 overflow-y-auto border-t border-edge-soft">
+          <h2 className="px-6 pb-2 pt-5 font-display text-lg text-ink-3">Past checks</h2>
           {sessions.length === 0 ? (
-            <p className="px-3 py-4 text-sm text-ink-4 text-center">
-              No sessions yet. Start a new health check!
+            <p className="px-6 py-3 text-sm font-light leading-relaxed text-ink-4">
+              {signedIn
+                ? "Your checks will be listed here."
+                : "Sign in to keep a history of your checks."}
             </p>
           ) : (
-            <ul className="space-y-1">
+            <ul>
               {sessions.map((session) => {
                 const isActive = currentSessionId === session.id;
                 return (
                   <li key={session.id}>
                     <button
-                      onClick={() => { onSelectSession(session.id); setIsOpen(false); }}
+                      onClick={() => {
+                        onSelectSession(session.id);
+                        close();
+                      }}
                       aria-current={isActive ? "true" : undefined}
-                      className={`w-full text-left px-3 py-2.5 rounded-lg text-sm group transition-all duration-200 ${
+                      className={`w-full border-l-2 px-6 py-3 text-left transition-colors duration-200 ${
                         isActive
-                          ? "bg-amethyst/25 text-amethyst-200 ring-1 ring-amethyst-600/50"
-                          : "text-ink-3 hover:bg-surface-3 hover:text-ink-2"
+                          ? "border-lilac bg-amethyst/20"
+                          : "border-transparent hover:bg-surface-2"
                       }`}
                     >
-                      <div className="flex items-center gap-2">
-                        <span className="text-base">💬</span>
-                        <span className="truncate font-medium">{session.title}</span>
-                      </div>
-                      <div className="flex items-center gap-2 mt-1 ml-7">
-                        <span className="text-xs text-ink-4">
-                          {session.message_count} messages
-                        </span>
-                        <span className="text-xs text-ink-4">•</span>
-                        <span className="text-xs text-ink-4">
-                          {formatDate(session.created_at)}
-                        </span>
-                      </div>
+                      <span className={`block truncate text-sm ${isActive ? "text-ink" : "text-ink-2"}`}>
+                        {session.title}
+                      </span>
+                      <span className="mt-0.5 block text-xs font-light text-ink-4">
+                        {session.message_count} messages, {lastActive(session.updated_at ?? session.created_at)}
+                      </span>
                     </button>
                   </li>
                 );
               })}
             </ul>
           )}
-        </div>
+        </nav>
 
-        {/* Footer nav */}
-        <div className="p-3 border-t border-edge space-y-1">
-          <Link
-            href="/profile"
-            className="flex items-center gap-2 px-3 py-2 text-sm text-ink-4 hover:bg-surface-3 hover:text-ink-2 rounded-lg transition-colors duration-200"
-          >
-            <span>🩺</span> Health Profile
+        <div className="flex gap-6 border-t border-edge-soft px-6 py-5">
+          <Link href="/profile" className={`${TRACKED} text-ink-4 hover:text-ink transition-colors duration-200`}>
+            Profile
           </Link>
-          <Link
-            href="/about"
-            className="flex items-center gap-2 px-3 py-2 text-sm text-ink-4 hover:bg-surface-3 hover:text-ink-2 rounded-lg transition-colors duration-200"
-          >
-            <span>ℹ️</span> About CareNexus
+          <Link href="/dashboard" className={`${TRACKED} text-ink-4 hover:text-ink transition-colors duration-200`}>
+            Dashboard
+          </Link>
+          <Link href="/about" className={`${TRACKED} text-ink-4 hover:text-ink transition-colors duration-200`}>
+            About
           </Link>
         </div>
       </aside>
 
-      {/* Mobile overlay */}
       {isOpen && (
-        <div
-          className="fixed inset-0 bg-void/70 backdrop-blur-sm z-30 lg:hidden"
-          onClick={() => setIsOpen(false)}
-        />
+        <div className="fixed inset-0 z-30 bg-void/70 backdrop-blur-sm lg:hidden" onClick={close} aria-hidden="true" />
       )}
     </>
   );

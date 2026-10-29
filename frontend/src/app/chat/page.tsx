@@ -10,32 +10,19 @@ import QuickActions from "@/components/QuickActions";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import BodyMapPanel from "@/components/BodyMapPanel";
 import { applyRegionToDraft, type RegionId } from "@/lib/bodyRegions";
-import { ALERT_ADVISORY } from "@/lib/styles";
+import { ALERT_ADVISORY, TRACKED } from "@/lib/styles";
+import { TRIAGE, TRIAGE_ORDER } from "@/lib/triage";
 
 export default function ChatPage() {
   const router = useRouter();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: "welcome",
-      role: "assistant",
-      content:
-        "Hello! I'm **CareNexus**, your AI health assistant. 🏥\n\nDescribe your symptoms and I'll help assess them using our medical knowledge base.\n\n- 🟢 **Green** — Self-care guidance\n- 🟡 **Yellow** — See a doctor soon\n- 🔴 **Red** — Seek emergency care\n\n⚕️ *Remember — I provide guidance, not diagnosis. Always consult a doctor for medical advice.*",
-      triage_level: null,
-      sources: null,
-      // Deliberately empty: the greeting is UI chrome, not a stored message.
-      // A real Date here is evaluated at prerender time on the server and again
-      // in the browser, so the rendered timestamps differ and React throws a
-      // hydration error (#418). MessageBubble hides an empty timestamp.
-      created_at: "",
-    },
-  ]);
+  // Empty until the first exchange; the empty state explains the levels.
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [showQuickActions, setShowQuickActions] = useState(true);
   const [showMap, setShowMap] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState<RegionId | null>(null);
 
@@ -51,8 +38,6 @@ export default function ChatPage() {
   const handleSend = async (messageText?: string) => {
     const text = messageText || input;
     if (!text.trim() || isLoading) return;
-
-    setShowQuickActions(false);
 
     const userMessage: ChatMessage = {
       id: `user-${Date.now()}`,
@@ -77,7 +62,7 @@ export default function ChatPage() {
             id: `assistant-${Date.now()}`,
             role: "assistant",
             content:
-              "To get AI-powered symptom analysis, please **log in** or **create an account**.\n\n👉 [Login](/login) | [Register](/register)",
+              "Sign in to get an assessment. Checks are saved to your account so you can come back to them.\n\n[Sign in](/login) or [create an account](/register).",
             triage_level: null,
             sources: null,
             created_at: new Date().toISOString(),
@@ -99,7 +84,7 @@ export default function ChatPage() {
         {
           id: `error-${Date.now()}`,
           role: "assistant",
-          content: `⚠️ **Error:** ${errorMessage}\n\nPlease try again or check your connection.`,
+          content: `Your message could not be sent: ${errorMessage}\n\nCheck that the CareNexus server is running, then send it again.`,
           triage_level: null,
           sources: null,
           created_at: new Date().toISOString(),
@@ -114,7 +99,6 @@ export default function ChatPage() {
   const handleRegionSelect = (region: RegionId) => {
     const previous = selectedRegion;
     setSelectedRegion(region);
-    setShowQuickActions(false);
     setInput((draft) => applyRegionToDraft(draft, region, previous));
     inputRef.current?.focus();
   };
@@ -122,23 +106,11 @@ export default function ChatPage() {
   const handleNewChat = () => {
     setSessionId(null);
     setSelectedRegion(null);
-    setShowQuickActions(true);
-    setMessages([
-      {
-        id: "welcome",
-        role: "assistant",
-        content:
-          "Hello! I'm **CareNexus**, your AI health assistant. 🏥\n\nDescribe your symptoms and I'll help assess them.\n\n⚕️ *Always consult a doctor for medical advice.*",
-        triage_level: null,
-        sources: null,
-        created_at: "",
-      },
-    ]);
+    setMessages([]);
   };
 
   const handleSelectSession = async (selectedSessionId: string) => {
     setSessionId(selectedSessionId);
-    setShowQuickActions(false);
     try {
       const msgs = await api.getSessionMessages(selectedSessionId);
       if (msgs.length > 0) {
@@ -149,121 +121,164 @@ export default function ChatPage() {
     }
   };
 
+  const isEmpty = messages.length === 0;
+
   return (
     <ErrorBoundary>
       <div className="flex h-screen bg-void">
-        {/* Sidebar */}
         <ChatSidebar
           currentSessionId={sessionId}
           onSelectSession={handleSelectSession}
           onNewChat={handleNewChat}
         />
 
-        {/* Main chat area */}
-        <div className="flex flex-col flex-1 min-w-0">
-          {/* Header */}
-          <header className="flex items-center justify-between px-6 py-3 bg-surface/80 backdrop-blur-xl border-b border-edge">
-            <div className="flex items-center gap-3">
-              <div className="lg:hidden w-8" /> {/* Spacer for sidebar toggle */}
-              <div>
-                <h2 className="text-sm font-semibold text-ink">
-                  Health Check
-                </h2>
-                <p className="text-xs text-ink-4">
-                  {sessionId ? `Session active` : "New conversation"}
-                </p>
-              </div>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="flex items-center justify-between gap-4 border-b border-edge-soft px-5 py-3 pl-16 lg:pl-8">
+            <div>
+              <h1 className="font-display text-xl text-ink">Health check</h1>
+              <p className="text-xs font-light text-ink-4">
+                {sessionId ? "Continuing a saved check" : "New conversation"}
+              </p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
+              <span className={`${ALERT_ADVISORY} hidden md:inline`}>Guidance, not a diagnosis</span>
               <button
                 type="button"
                 onClick={() => setShowMap((open) => !open)}
                 aria-pressed={showMap}
-                className={`text-xs px-3 py-1.5 rounded-lg border transition-colors duration-200 ${
+                className={`${TRACKED} rounded-full border px-4 py-2 transition-colors duration-200 ${
                   showMap
-                    ? "border-amethyst-400 bg-amethyst/30 text-amethyst-200"
-                    : "border-edge text-ink-3 hover:border-amethyst-600 hover:text-ink-2"
+                    ? "border-lilac/70 bg-amethyst/40 text-ink"
+                    : "border-edge text-ink-3 hover:border-lilac/50 hover:text-ink"
                 }`}
               >
-                🫀 Body map
+                Body map
               </button>
-              <span className={`${ALERT_ADVISORY} hidden sm:inline`}>
-                ⚕️ Not medical advice
-              </span>
               {isAuthenticated ? (
                 <button
-                  onClick={() => { api.logout(); setIsAuthenticated(false); router.push("/"); }}
-                  className="text-xs text-ink-4 hover:text-triage-red px-3 py-1.5 rounded-lg hover:bg-triage-red/10 transition-colors duration-200"
+                  onClick={() => {
+                    api.logout();
+                    setIsAuthenticated(false);
+                    router.push("/");
+                  }}
+                  className={`${TRACKED} hidden text-ink-4 transition-colors duration-200 hover:text-ink sm:inline`}
                 >
-                  Logout
+                  Log out
                 </button>
               ) : (
-                <a href="/login" className="text-xs text-amethyst-300 hover:text-amethyst-200 font-medium px-3 py-1.5 rounded-lg hover:bg-amethyst/20 transition-colors duration-200">
-                  Login
+                <a href="/login" className={`${TRACKED} text-lilac transition-colors duration-200 hover:text-ink`}>
+                  Sign in
                 </a>
               )}
             </div>
           </header>
 
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4">
-            {messages.map((msg) => (
-              <MessageBubble
-                key={msg.id}
-                role={msg.role}
-                content={msg.content}
-                triageLevel={msg.triage_level}
-                sources={msg.sources}
-                timestamp={msg.created_at}
-              />
-            ))}
-            {isLoading && (
-              <div className="flex justify-start">
-                <div className="px-4 py-3 rounded-2xl bg-surface border border-edge-soft shadow-lg shadow-black/40 rounded-bl-md">
-                  <div className="flex gap-1.5">
-                    <div className="w-2 h-2 bg-amethyst-300 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <div className="w-2 h-2 bg-amethyst-300 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <div className="w-2 h-2 bg-amethyst-300 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+          <div className="flex-1 overflow-y-auto">
+            <div className="mx-auto max-w-3xl px-5 py-10 sm:px-8">
+              {isEmpty ? (
+                <section className="animate-rise">
+                  <h2 className="font-display font-light leading-[0.95] text-lilac text-[clamp(2.75rem,6vw,4.5rem)]">
+                    What are you feeling?
+                  </h2>
+                  <p className="mt-5 max-w-[56ch] font-light leading-relaxed text-ink-3">
+                    Describe it in your own words: where it is, how long it has lasted and
+                    how bad it is. You can also point to it on the body map.
+                  </p>
+
+                  <dl className="mt-10 border-t border-edge-soft">
+                    {TRIAGE_ORDER.map((level) => (
+                      <div key={level} className="grid grid-cols-[8.5rem_1fr] gap-4 border-b border-edge-soft py-3.5">
+                        <dt className={`flex items-center gap-2.5 ${TRACKED} ${TRIAGE[level].text}`}>
+                          <span aria-hidden="true" className={`h-2 w-2 rounded-full ${TRIAGE[level].dot}`} />
+                          {TRIAGE[level].label}
+                        </dt>
+                        <dd className="text-sm font-light text-ink-3">{TRIAGE[level].meaning}</dd>
+                      </div>
+                    ))}
+                  </dl>
+
+                  <div className="mt-10">
+                    <QuickActions onSelect={handleSend} disabled={isLoading} />
                   </div>
+
+                  {!isAuthenticated && (
+                    <p className="mt-10 text-sm font-light text-ink-4">
+                      <a href="/login" className="text-lilac underline decoration-lilac/30 underline-offset-4 hover:decoration-lilac">
+                        Sign in
+                      </a>{" "}
+                      to get an assessment and keep a history of your checks.
+                    </p>
+                  )}
+                </section>
+              ) : (
+                <div className="space-y-10">
+                  {messages.map((msg) => (
+                    <MessageBubble
+                      key={msg.id}
+                      role={msg.role}
+                      content={msg.content}
+                      triageLevel={msg.triage_level}
+                      sources={msg.sources}
+                      timestamp={msg.created_at}
+                    />
+                  ))}
+                  {isLoading && (
+                    <p className="flex items-center gap-3 text-sm font-light text-ink-4" role="status">
+                      <span className="font-display text-lg italic text-lilac">CareNexus</span>
+                      is reading your message
+                      <span className="flex gap-1" aria-hidden="true">
+                        {[0, 150, 300].map((delay) => (
+                          <span
+                            key={delay}
+                            className="h-1.5 w-1.5 animate-bounce rounded-full bg-lilac"
+                            style={{ animationDelay: `${delay}ms` }}
+                          />
+                        ))}
+                      </span>
+                    </p>
+                  )}
+                  <div ref={messagesEndRef} />
                 </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
+              )}
+            </div>
           </div>
 
-          {/* Quick Actions */}
-          {showQuickActions && messages.length <= 1 && (
-            <QuickActions onSelect={handleSend} disabled={isLoading} />
-          )}
-
-          {/* Input */}
-          <div className="px-4 py-3 bg-surface/80 backdrop-blur-xl border-t border-edge">
-            <div className="flex gap-3 max-w-4xl mx-auto">
+          <div className="border-t border-edge-soft px-5 py-4 sm:px-8">
+            <form
+              className="mx-auto flex max-w-3xl items-center gap-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSend();
+              }}
+            >
               <input
                 ref={inputRef}
                 type="text"
+                aria-label="Describe your symptoms"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-                placeholder={isAuthenticated ? "Describe your symptoms..." : "Login to get AI analysis..."}
+                placeholder={isAuthenticated ? "Describe your symptoms" : "Sign in to get an assessment"}
                 disabled={isLoading}
-                className="flex-1 px-4 py-3 rounded-xl bg-abyss border border-edge text-ink placeholder:text-ink-4/60 focus:outline-none focus:border-amethyst-400 focus:ring-2 focus:ring-amethyst-400/40 disabled:opacity-50 transition-colors duration-200 text-sm"
+                className="min-w-0 flex-1 rounded-full border border-edge bg-abyss px-6 py-3.5 text-[15px] font-light text-ink placeholder:text-ink-4/70 transition-colors duration-200 focus:border-lilac/60 focus:outline-none focus:ring-1 focus:ring-lilac/30 disabled:opacity-50"
               />
               <button
-                onClick={() => handleSend()}
+                type="submit"
+                aria-label="Send"
                 disabled={isLoading || !input.trim()}
-                className="px-5 py-3 rounded-xl font-medium text-white bg-gradient-to-r from-amethyst to-amethyst-500 shadow-lg shadow-amethyst/30 hover:from-amethyst-600 hover:to-amethyst-400 active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-amethyst text-ink ring-1 ring-inset ring-lilac/30 transition-colors duration-200 hover:bg-amethyst-600 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {isLoading ? (
-                  <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
                 ) : (
-                  "Send"
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 12h14M13 6l6 6-6 6" />
+                  </svg>
                 )}
               </button>
-            </div>
+            </form>
           </div>
         </div>
 
@@ -271,7 +286,7 @@ export default function ChatPage() {
         {showMap && (
           <aside
             aria-label="Body map panel"
-            className="fixed inset-y-0 right-0 z-40 w-80 border-l border-edge bg-surface-2 shadow-2xl shadow-black/60 lg:static lg:z-auto lg:shadow-none"
+            className="fixed inset-y-0 right-0 z-40 w-80 border-l border-edge-soft bg-void shadow-2xl shadow-black/70 lg:static lg:z-auto lg:shadow-none"
           >
             <BodyMapPanel selected={selectedRegion} onSelect={handleRegionSelect} />
           </aside>
