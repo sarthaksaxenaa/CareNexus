@@ -12,6 +12,9 @@ interface ChatSidebarProps {
   currentSessionId: string | null;
   onSelectSession: (sessionId: string) => void;
   onNewChat: () => void;
+  /** Changes whenever the open conversation gains messages, so counts and
+   *  ordering stay current without switching sessions. */
+  refreshKey?: number;
 }
 
 /** "Just now", "5 min ago", "3 h ago", "2 days ago", then a date. */
@@ -31,6 +34,7 @@ export default function ChatSidebar({
   currentSessionId,
   onSelectSession,
   onNewChat,
+  refreshKey = 0,
 }: ChatSidebarProps) {
   const [sessions, setSessions] = useState<ChatSessionInfo[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -56,7 +60,7 @@ export default function ChatSidebar({
     return () => {
       cancelled = true;
     };
-  }, [currentSessionId]);
+  }, [currentSessionId, refreshKey]);
 
   const close = () => setIsOpen(false);
 

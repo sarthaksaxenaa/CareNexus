@@ -133,6 +133,7 @@ export default function ChatPage() {
           currentSessionId={sessionId}
           onSelectSession={handleSelectSession}
           onNewChat={handleNewChat}
+          refreshKey={messages.length}
         />
 
         <div className="flex min-w-0 flex-1 flex-col">

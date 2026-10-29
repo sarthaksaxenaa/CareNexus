@@ -45,6 +45,11 @@ test("a conversation is saved and can be reopened", async ({ page }) => {
   await send(page, "I have had a sore throat and runny nose since yesterday");
   const sidebar = page.getByRole("navigation", { name: "Past checks" });
   await expect(sidebar.getByRole("button")).toHaveCount(1);
+  await expect(sidebar).toContainText("2 messages");
+
+  // The count must follow new messages in the open conversation.
+  await send(page, "It is getting worse today");
+  await expect(sidebar).toContainText("4 messages");
 
   await page.getByRole("button", { name: "New check" }).click();
   await expect(page.getByRole("heading", { name: "What are you feeling?" })).toBeVisible();
