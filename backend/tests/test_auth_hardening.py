@@ -2,7 +2,6 @@
 
 import uuid
 
-import pytest
 from httpx import AsyncClient
 from sqlalchemy import update
 
@@ -11,9 +10,6 @@ from app.models.user import User
 from app.services.auth_service import create_access_token, create_refresh_token
 from tests.conftest import TestSessionFactory
 from tests.helpers import bearer, register
-
-pytestmark = pytest.mark.asyncio
-
 
 # ─── Refresh tokens ───────────────────────────────────────────────────────────
 
