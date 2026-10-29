@@ -46,6 +46,10 @@
   --color-triage-red: #ef4444;
   --color-triage-red-deep: #dc2626;
 
+  /* ─── Type families ──────────────────────────────────────────────────── */
+  --font-sans: "Jost Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Cormorant Garamond Variable", "Cormorant Garamond", Georgia, serif;
+
   /* ─── Motion ──────────────────────────────────────────────────────────── */
   --animate-aurora: aurora 14s ease-in-out infinite;
   --animate-rise: rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
