@@ -1,12 +1,22 @@
-# Weekly dependency update pull requests. CI (tests, audits, e2e) runs on each,
-# so an upgrade is merged only once the whole pipeline is green.
+# Weekly dependency update pull requests. Each must pass the full CI
+# pipeline (tests, audits, end-to-end) before it is merged.
+#
+# - cooldown: only propose releases that have been public for 14 days,
+#   which keeps freshly published (possibly compromised) versions out.
+# - major versions are ignored: they need a deliberate migration, not a
+#   bot PR. Security fixes still arrive as Dependabot security updates.
 version: 2
 updates:
   - package-ecosystem: pip
     directory: /backend
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 14
+    open-pull-requests-limit: 3
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
       python-minor:
         update-types: [minor, patch]
@@ -15,7 +25,12 @@ updates:
     directory: /frontend
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 14
+    open-pull-requests-limit: 3
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
       npm-minor:
         update-types: [minor, patch]
@@ -24,3 +39,8 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    cooldown:
+      default-days: 14
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
