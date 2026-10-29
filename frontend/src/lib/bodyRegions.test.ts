@@ -69,4 +69,38 @@ describe("applyRegionToDraft", () => {
     const draft = "sharp pain for 3 days";
     expect(applyRegionToDraft(draft, "back")).toContain(draft);
   });
+
+  describe("changing your mind", () => {
+    it("replaces the previous region phrase instead of accumulating", () => {
+      const first = applyRegionToDraft("", "chest");
+      expect(applyRegionToDraft(first, "knee", "chest")).toBe(
+        "I have pain in my knee ",
+      );
+    });
+
+    it("replaces the previous parenthesised tag, keeping the user's words", () => {
+      const first = applyRegionToDraft("I feel dizzy", "head");
+      expect(applyRegionToDraft(first, "knee", "head")).toBe(
+        "I feel dizzy (knee) ",
+      );
+    });
+
+    it("keeps text the user typed after the region phrase", () => {
+      const draft = "I have pain in my chest for 3 days";
+      expect(applyRegionToDraft(draft, "back", "chest")).toBe(
+        "I have pain in my back for 3 days",
+      );
+    });
+
+    it("appends when the user already deleted the previous region", () => {
+      expect(applyRegionToDraft("sharp pain", "knee", "chest")).toBe(
+        "sharp pain (knee) ",
+      );
+    });
+
+    it("ignores a previous region equal to the new one", () => {
+      const once = applyRegionToDraft("", "hip");
+      expect(applyRegionToDraft(once, "hip", "hip")).toBe(once);
+    });
+  });
 });

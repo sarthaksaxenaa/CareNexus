@@ -19,9 +19,9 @@ import { resolveTorsoRegion, type RegionId } from "@/lib/bodyRegions";
 // Obsidian Amethyst, mirrored from the tokens in globals.css. three.js
 // materials cannot read CSS variables, so the hex values live here.
 const COLOR = {
-  base: "#1a0c2a",
-  baseGlow: "#3b0a6b",
-  hover: "#6b21a8",
+  base: "#34205a",
+  baseGlow: "#6b21a8",
+  hover: "#8b3fd1",
   hoverGlow: "#7e22ce",
   selected: "#a855f7",
   selectedGlow: "#9333ea",
@@ -65,7 +65,7 @@ function Part({
             ? COLOR.hoverGlow
             : COLOR.baseGlow
       }
-      emissiveIntensity={isSelected ? 0.7 : isHovered ? 0.5 : 0.22}
+      emissiveIntensity={isSelected ? 0.75 : isHovered ? 0.55 : 0.32}
       roughness={0.45}
       metalness={0.15}
     />
@@ -260,23 +260,25 @@ export default function BodyMapScene({
                 </mesh>
               )}
             </Part>
-            <Part {...common} regions={["leg"]} resolve={fixed("leg")} position={[0.1 * s, 0.1, 0]}>
+            <Part {...common} regions={["leg"]} resolve={fixed("leg")} position={[0.1 * s, 0.11, 0]}>
               {(m) => (
                 <mesh>
-                  <capsuleGeometry args={[0.055, 0.28, 8, 16]} />
+                  <capsuleGeometry args={[0.05, 0.22, 8, 16]} />
                   {m}
                 </mesh>
               )}
             </Part>
-            <Part {...common} regions={["ankle"]} resolve={fixed("ankle")} position={[0.1 * s, -0.085, 0]}>
+            <Part {...common} regions={["ankle"]} resolve={fixed("ankle")} position={[0.1 * s, -0.09, 0]}>
               {(m) => (
                 <mesh>
-                  <sphereGeometry args={[0.044, 20, 20]} />
+                  {/* Wider than the shin's rounded end, or it is buried inside it
+                      and can never be clicked. */}
+                  <sphereGeometry args={[0.054, 20, 20]} />
                   {m}
                 </mesh>
               )}
             </Part>
-            <Part {...common} regions={["foot"]} resolve={fixed("foot")} position={[0.1 * s, -0.14, 0.05]}>
+            <Part {...common} regions={["foot"]} resolve={fixed("foot")} position={[0.1 * s, -0.15, 0.05]}>
               {(m) => (
                 <RoundedBox args={[0.09, 0.05, 0.2]} radius={0.02} smoothness={3}>
                   {m}
