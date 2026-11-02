@@ -1,0 +1,39 @@
+{
+  "checked": "2026-11-02T18:46:57.049Z",
+  "state": "operational",
+  "api": {
+    "url": "https://carenexus-api.onrender.com",
+    "ok": true,
+    "version": "0.6.0",
+    "firstMs": 377,
+    "p50Ms": 105,
+    "p95Ms": 255,
+    "samples": [
+      101,
+      249,
+      255,
+      107,
+      248,
+      97,
+      105,
+      108,
+      104,
+      113,
+      103,
+      101,
+      106,
+      104,
+      102
+    ]
+  },
+  "cors": {
+    "ok": true,
+    "status": 200
+  },
+  "web": {
+    "url": "https://carenexus-health.vercel.app",
+    "ok": true,
+    "status": 200,
+    "ms": 204
+  }
+}
