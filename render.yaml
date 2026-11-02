@@ -1,0 +1,23 @@
+# Render Blueprint: deploys the API from backend/Dockerfile.
+# New > Blueprint > pick this repo. Render asks for the two values marked
+# `sync: false` (they are secrets/URLs, so they never live in git).
+services:
+  - type: web
+    name: carenexus-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: SECRET_KEY
+        generateValue: true # random 32+ character secret, created once
+      - key: TRUST_PROXY_HEADERS
+        value: "true" # Render's proxy sets X-Forwarded-For
+      - key: DATABASE_URL
+        sync: false # Neon connection string
+      - key: ALLOWED_ORIGINS
+        sync: false # JSON list, e.g. ["https://carenexus.vercel.app"]
