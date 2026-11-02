@@ -10,6 +10,13 @@ services:
     plan: free
     healthCheckPath: /health
     autoDeploy: true
+    # Redeploy only when the API itself changes, not for docs or frontend pushes.
+    buildFilter:
+      paths:
+        - backend/**
+        - render.yaml
+      ignoredPaths:
+        - backend/tests/**
     envVars:
       - key: ENVIRONMENT
         value: production
