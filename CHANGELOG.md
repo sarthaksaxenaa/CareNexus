@@ -8,12 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Sex (male or female) on the account: required at sign-up, asked once after sign-in for older accounts, editable in the profile; a start-up migration adds the column to existing databases.
+- Triage never matches conditions limited to the other sex (menstrual cramps, PCOS, breast pain for male patients).
+- Sculpted male and female 3D mannequins; the female body adds breast and pelvis regions. New condition: breast pain (mastalgia, N64.4); 50 conditions in total.
 - README redesign: theme-aware animated hero and panels, a production status card probed by CI, a commit activity chart, and a request sequence diagram; fonts subset per image.
 - Live deployment: web app on Vercel, API on Render (Docker, `render.yaml` Blueprint), database on Neon PostgreSQL.
 - CI job that runs the whole backend suite against PostgreSQL 16.
 - One-click launchers: `start.cmd` (Windows, double-click) and `start.sh` (macOS/Linux).
 
 ### Fixed
+- Gemini answers ignored the retrieved conditions and risk factors (only the raw message was sent), and its error fallback dropped them.
 - Emergency detection matched exact phrases only, so 29 of 30 everyday wordings were missed ("pain in my chest", "I can’t breathe" with a curly apostrophe, "I blacked out"); messages are now normalised and matched against phrase patterns.
 - Registration and chat failed on PostgreSQL: timezone-aware timestamps were written to `TIMESTAMP` columns (SQLite had accepted them).
 - Managed-Postgres connection strings (`sslmode`, `channel_binding`) are translated for asyncpg.

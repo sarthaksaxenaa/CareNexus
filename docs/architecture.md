@@ -59,12 +59,12 @@ Dependency-free TF-IDF with cosine similarity, built in memory at start-up (sub-
 
 | Table | Key columns | Notes |
 |---|---|---|
-| `users` | id (UUID), email (unique, stored lower-case), hashed_password, is_active | |
+| `users` | id (UUID), email (unique, stored lower-case), hashed_password, sex, is_active | sex is `male` or `female`, required at sign-up; older accounts are asked once |
 | `health_profiles` | user_id → users (CASCADE) | blood group validated against the eight groups |
 | `chat_sessions` | user_id → users (CASCADE), title, updated_at | `updated_at` = latest message, used for ordering |
 | `messages` | session_id → chat_sessions (CASCADE), role, content, triage_level, sources | |
 
-Timestamps are stored as naive UTC and serialised with an explicit offset. Tables are created at start-up (`create_all`); there are no migrations yet, so schema changes require a fresh database.
+Timestamps are stored as naive UTC and serialised with an explicit offset. Tables are created at start-up (`create_all`), which never alters an existing table, so columns added later are listed in `ADDITIVE_COLUMNS` (`app/core/database.py`) and added at start-up to older databases, production included. Only additive, nullable changes go that way; anything that rewrites data needs a real migration tool.
 
 ## Frontend
 
