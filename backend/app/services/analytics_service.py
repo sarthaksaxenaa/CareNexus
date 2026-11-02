@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models._time import utcnow
 from app.models.chat import ChatSession, Message, MessageRole, TriageLevel
 
 
@@ -58,7 +59,7 @@ async def get_daily_usage(
     Returns:
         List of dicts with date, message_count, and session_count.
     """
-    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    cutoff = utcnow() - timedelta(days=days)
 
     # Get message counts per day
     msg_result = await db.execute(

@@ -1,17 +1,13 @@
 import enum
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime
 
 from sqlalchemy import DateTime, ForeignKey, String, Text, Uuid
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
-
-
-def _utcnow() -> datetime:
-    """Timezone-aware UTC timestamp (replaces deprecated datetime.utcnow)."""
-    return datetime.now(UTC)
+from app.models._time import utcnow
 
 
 class TriageLevel(str, enum.Enum):
@@ -39,9 +35,9 @@ class ChatSession(Base):
     )
     title: Mapped[str] = mapped_column(String(200), default="New Health Check")
     is_active: Mapped[bool] = mapped_column(default=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=_utcnow, onupdate=_utcnow
+        DateTime, default=utcnow, onupdate=utcnow
     )
 
     # Relationships
@@ -72,7 +68,7 @@ class Message(Base):
     sources: Mapped[str | None] = mapped_column(
         Text, nullable=True
     )  # JSON string of cited sources
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     # Relationships
     session: Mapped[ChatSession] = relationship(back_populates="messages")

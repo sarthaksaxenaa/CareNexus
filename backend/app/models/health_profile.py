@@ -1,15 +1,11 @@
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
-
-
-def _utcnow() -> datetime:
-    """Timezone-aware UTC timestamp (replaces deprecated datetime.utcnow)."""
-    return datetime.now(UTC)
+from app.models._time import utcnow
 
 
 class HealthProfile(Base):
@@ -30,9 +26,9 @@ class HealthProfile(Base):
     )  # JSON string or comma-separated
     current_medications: Mapped[str | None] = mapped_column(Text, nullable=True)
     allergies: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=_utcnow, onupdate=_utcnow
+        DateTime, default=utcnow, onupdate=utcnow
     )
 
     # Relationships

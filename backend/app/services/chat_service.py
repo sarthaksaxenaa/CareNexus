@@ -1,11 +1,11 @@
 """Chat service — handles chat sessions, messages, and AI response orchestration."""
 
 import uuid
-from datetime import UTC, datetime
 
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models._time import utcnow
 from app.models.chat import ChatSession, Message, MessageRole, TriageLevel
 
 
@@ -84,7 +84,7 @@ async def add_message(
     await db.execute(
         update(ChatSession)
         .where(ChatSession.id == session_id)
-        .values(updated_at=datetime.now(UTC))
+        .values(updated_at=utcnow())
     )
     await db.flush()
     await db.refresh(message)
