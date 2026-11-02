@@ -81,16 +81,20 @@ const failing = allSuites ? suites.reduce((n, s) => n + s.failed, 0) : null;
 
 const pct = (x, digits = 0) => (x == null ? "–" : `${(x * 100).toFixed(digits)}%`);
 const num = (x) => (x == null ? "–" : new Intl.NumberFormat("en-IN").format(x));
-const today = new Date(fromCache ? cached.updated : Date.now()).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 
-const stats = {
-  updated: fromCache ? cached.updated : new Date().toISOString(),
+const measured = {
   tests: { total: totalTests, failing, backend: backend?.tests ?? null, unit: unit?.tests ?? null, e2e: e2e?.tests ?? null },
   coverage: lineRate,
   retrieval,
   conditions: 49,
   vulnerabilities: vulns,
 };
+// The date means "figures last changed": unchanged figures keep the previous
+// date, which makes the drawing deterministic and an unchanged run a no-op.
+const same = (a, b) => JSON.stringify({ ...a, updated: 0 }) === JSON.stringify({ ...b, updated: 0 });
+const unchanged = cached && same(cached, measured);
+const stats = { updated: fromCache || unchanged ? cached.updated : new Date().toISOString(), ...measured };
+const today = new Date(stats.updated).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 
 // ── Draw ─────────────────────────────────────────────────────────────────────
 const W = 1280;
@@ -160,17 +164,17 @@ ${body}`,
   });
 }
 
-// Only rewrite when a measured figure changed, so a scheduled run that finds
-// the same numbers does not create a commit (the date means "last changed").
-const previous = json("docs/assets/stats.json");
-const same = (a, b) => JSON.stringify({ ...a, updated: 0 }) === JSON.stringify({ ...b, updated: 0 });
-const cardsExist = THEMES.every((t) => existsSync(join(ASSETS, `stats-${t.scheme}.svg`)));
-if (previous && cardsExist && same(previous, stats) && !process.argv.includes("--force")) {
-  console.log("stats unchanged; keeping existing card");
-  process.exit(0);
-}
-
+// Write only files whose content differs, so the workflow commits nothing
+// when nothing changed, and a card can never lag behind stats.json.
 mkdirSync(ASSETS, { recursive: true });
-for (const t of THEMES) writeFileSync(join(ASSETS, `stats-${t.scheme}.svg`), card(t));
-writeFileSync(join(ASSETS, "stats.json"), JSON.stringify(stats, null, 2) + "\n");
-console.log("stats:", JSON.stringify({ totalTests, failing, coverage: lineRate, top1: retrieval?.labelled?.top1, vulns }));
+const writeIfChanged = (name, content) => {
+  const path = join(ASSETS, name);
+  if (existsSync(path) && readFileSync(path, "utf8") === content) return false;
+  writeFileSync(path, content);
+  return true;
+};
+const changed = [
+  ...THEMES.map((t) => writeIfChanged(`stats-${t.scheme}.svg`, card(t)) && `stats-${t.scheme}.svg`),
+  writeIfChanged("stats.json", JSON.stringify(stats, null, 2) + "\n") && "stats.json",
+].filter(Boolean);
+console.log("stats:", JSON.stringify({ totalTests, failing, coverage: lineRate, top1: retrieval?.labelled?.top1, vulns }), changed.length ? `wrote ${changed.join(", ")}` : "no change");
