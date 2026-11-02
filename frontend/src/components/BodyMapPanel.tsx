@@ -4,7 +4,8 @@ import dynamic from "next/dynamic";
 import { useState, useSyncExternalStore } from "react";
 import BodyRegionList from "@/components/BodyRegionList";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import { getRegion, type RegionId } from "@/lib/bodyRegions";
+import { getRegion, regionsFor, type RegionId } from "@/lib/bodyRegions";
+import { SEX_OPTIONS, type Sex } from "@/lib/sex";
 import { TRACKED } from "@/lib/styles";
 
 // three.js touches `window`, so it can only render in the browser. Loading it
@@ -56,13 +57,15 @@ const getReducedMotion = () => window.matchMedia(REDUCED_MOTION).matches;
 // ─── Panel ───────────────────────────────────────────────────────────────────
 
 interface BodyMapPanelProps {
+  /** The account's sex; null for signed-out visitors, who may pick a body. */
+  sex: Sex | null;
   selected: RegionId | null;
   onSelect: (id: RegionId) => void;
 }
 
 type Mode = "3d" | "list";
 
-export default function BodyMapPanel({ selected, onSelect }: BodyMapPanelProps) {
+export default function BodyMapPanel({ sex, selected, onSelect }: BodyMapPanelProps) {
   const supportsWebGL = useSyncExternalStore(subscribeNever, detectWebGL, () => false);
   const reducedMotion = useSyncExternalStore(
     subscribeReducedMotion,
@@ -72,13 +75,15 @@ export default function BodyMapPanel({ selected, onSelect }: BodyMapPanelProps) 
 
   const [chosen, setChosen] = useState<Mode | null>(null);
   const [contextLost, setContextLost] = useState(false);
+  const [visitorBody, setVisitorBody] = useState<Sex>("female");
+  const body: Sex = sex ?? visitorBody;
 
   // Default to 3D only when it is safe and welcome; otherwise the list.
   const can3D = supportsWebGL && !contextLost;
   const mode: Mode = chosen ?? (can3D && !reducedMotion ? "3d" : "list");
   const effective: Mode = mode === "3d" && !can3D ? "list" : mode;
 
-  const listView = <BodyRegionList selected={selected} onSelect={onSelect} />;
+  const listView = <BodyRegionList regions={regionsFor(body)} selected={selected} onSelect={onSelect} />;
 
   return (
     <section aria-label="Body map" className="flex h-full flex-col gap-4 p-5 pt-16 lg:pt-5">
@@ -90,6 +95,28 @@ export default function BodyMapPanel({ selected, onSelect }: BodyMapPanelProps) 
             : "Choose a body region."}
         </p>
       </div>
+
+      {sex === null && (
+        <div role="radiogroup" aria-label="Body" className="flex items-center gap-2">
+          <span className={`${TRACKED} text-ink-4`}>Body</span>
+          {SEX_OPTIONS.map((o) => (
+            <button
+              key={o.value}
+              type="button"
+              role="radio"
+              aria-checked={body === o.value}
+              onClick={() => setVisitorBody(o.value)}
+              className={`rounded-full border px-3 py-1 text-xs transition-colors duration-200 ${
+                body === o.value
+                  ? "border-lilac/70 bg-amethyst text-ink"
+                  : "border-edge text-ink-4 hover:text-ink-2"
+              }`}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div role="tablist" aria-label="Body map view" className="flex gap-6 border-b border-edge-soft">
         {(["3d", "list"] as const).map((m) => {
@@ -120,6 +147,7 @@ export default function BodyMapPanel({ selected, onSelect }: BodyMapPanelProps) 
           // If WebGL throws at render time, drop to the list instead of a blank panel.
           <ErrorBoundary fallback={<div className="p-3">{listView}</div>}>
             <BodyMapScene
+              sex={body}
               selected={selected}
               onSelect={onSelect}
               animate={!reducedMotion}

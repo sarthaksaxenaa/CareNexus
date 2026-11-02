@@ -1,8 +1,10 @@
 "use client";
 
-import { BODY_REGIONS, type RegionId } from "@/lib/bodyRegions";
+import type { BodyRegion, RegionId } from "@/lib/bodyRegions";
 
 interface BodyRegionListProps {
+  /** The regions of the body being shown (see regionsFor). */
+  regions: readonly BodyRegion[];
   selected: RegionId | null;
   onSelect: (id: RegionId) => void;
 }
@@ -15,10 +17,10 @@ interface BodyRegionListProps {
  * GPU context is lost, or the user prefers reduced motion. It offers exactly
  * the same regions and calls the same handler.
  */
-export default function BodyRegionList({ selected, onSelect }: BodyRegionListProps) {
+export default function BodyRegionList({ regions, selected, onSelect }: BodyRegionListProps) {
   return (
     <ul className="grid grid-cols-2 gap-2" aria-label="Body regions">
-      {BODY_REGIONS.map((region) => {
+      {regions.map((region) => {
         const isSelected = selected === region.id;
         return (
           <li key={region.id}>

@@ -3,6 +3,7 @@ import {
   BODY_REGIONS,
   applyRegionToDraft,
   getRegion,
+  regionsFor,
   resolveTorsoRegion,
 } from "./bodyRegions";
 
@@ -22,6 +23,30 @@ describe("BODY_REGIONS", () => {
 
   it("gives every region a human label", () => {
     for (const r of BODY_REGIONS) expect(r.label.length).toBeGreaterThan(0);
+  });
+});
+
+describe("regionsFor", () => {
+  const ids = (sex: "male" | "female" | null) => regionsFor(sex).map((r) => r.id);
+
+  it("gives the female body breast and pelvis", () => {
+    expect(ids("female")).toEqual(expect.arrayContaining(["breast", "pelvis"]));
+  });
+
+  it("gives the male body neither", () => {
+    expect(ids("male")).not.toContain("breast");
+    expect(ids("male")).not.toContain("pelvis");
+  });
+
+  it("shows only shared regions when sex is unknown", () => {
+    expect(ids(null)).toEqual(ids("male"));
+  });
+
+  it("keeps every shared region on both bodies", () => {
+    for (const id of ids(null)) {
+      expect(ids("female")).toContain(id);
+      expect(ids("male")).toContain(id);
+    }
   });
 });
 

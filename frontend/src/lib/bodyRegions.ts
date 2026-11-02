@@ -9,14 +9,21 @@
  * parser recognises (see `_BODY_PARTS` in
  * backend/app/core/triage/symptom_parser.py). The pairing is asserted on
  * both sides: bodyRegions.test.ts here, and test_body_part_extraction.py there.
+ *
+ * Regions marked with `sex` exist only on that body (breast and pelvis are
+ * shown on the female body); `regionsFor` picks the set for one patient.
  */
+
+import type { Sex } from "./sex";
 
 export type RegionId =
   | "head"
   | "neck"
   | "shoulder"
   | "chest"
+  | "breast"
   | "abdomen"
+  | "pelvis"
   | "back"
   | "arm"
   | "wrist"
@@ -32,6 +39,8 @@ export interface BodyRegion {
   label: string;
   /** Natural-language fragment that seeds the chat message. */
   phrase: string;
+  /** Only shown on this body; absent means every body has it. */
+  sex?: Sex;
 }
 
 export const BODY_REGIONS: readonly BodyRegion[] = [
@@ -39,7 +48,9 @@ export const BODY_REGIONS: readonly BodyRegion[] = [
   { id: "neck", label: "Neck", phrase: "I have pain in my neck" },
   { id: "shoulder", label: "Shoulder", phrase: "I have pain in my shoulder" },
   { id: "chest", label: "Chest", phrase: "I have pain in my chest" },
+  { id: "breast", label: "Breast", phrase: "I have pain in my breast", sex: "female" },
   { id: "abdomen", label: "Abdomen", phrase: "I have pain in my abdomen" },
+  { id: "pelvis", label: "Pelvis", phrase: "I have pain in my pelvis", sex: "female" },
   { id: "back", label: "Back", phrase: "I have pain in my back" },
   { id: "arm", label: "Arm", phrase: "I have pain in my arm" },
   { id: "wrist", label: "Wrist", phrase: "I have pain in my wrist" },
@@ -50,6 +61,14 @@ export const BODY_REGIONS: readonly BodyRegion[] = [
   { id: "ankle", label: "Ankle", phrase: "I have pain in my ankle" },
   { id: "foot", label: "Foot", phrase: "I have pain in my foot" },
 ];
+
+/**
+ * The regions for one patient. With no sex known (a signed-out visitor),
+ * every region that is not sex-specific.
+ */
+export function regionsFor(sex: Sex | null): readonly BodyRegion[] {
+  return BODY_REGIONS.filter((r) => r.sex === undefined || r.sex === sex);
+}
 
 const BY_ID: ReadonlyMap<RegionId, BodyRegion> = new Map(
   BODY_REGIONS.map((r) => [r.id, r]),

@@ -59,3 +59,31 @@ test("onboarding never redirects off the site", async ({ page }) => {
   // This account already has a sex, so onboarding forwards it, safely.
   await expect(page).toHaveURL(/\/chat$/);
 });
+
+for (const [sex, hasFemaleRegions] of [
+  ["Female", true],
+  ["Male", false],
+] as const) {
+  test(`the body map shows the ${sex.toLowerCase()} body's regions`, async ({ page }) => {
+    await register(page, "Body Map", sex);
+    await page.getByRole("button", { name: /Body map/ }).click();
+    await page.getByRole("tab", { name: "List" }).click();
+    const regions = page.getByRole("list", { name: "Body regions" });
+    for (const region of ["Breast", "Pelvis"]) {
+      await expect(regions.getByRole("button", { name: region, exact: true })).toHaveCount(hasFemaleRegions ? 1 : 0);
+    }
+    await expect(regions.getByRole("button", { name: "Chest", exact: true })).toBeVisible();
+    // No body picker for signed-in users: the account decides.
+    await expect(page.getByRole("radiogroup", { name: "Body" })).toHaveCount(0);
+  });
+}
+
+test("a signed-out visitor can switch between the two bodies", async ({ page }) => {
+  await page.goto("/chat");
+  await page.getByRole("button", { name: /Body map/ }).click();
+  await page.getByRole("tab", { name: "List" }).click();
+  const regions = page.getByRole("list", { name: "Body regions" });
+  await expect(regions.getByRole("button", { name: "Breast", exact: true })).toBeVisible();
+  await page.getByRole("radio", { name: "Male", exact: true }).click();
+  await expect(regions.getByRole("button", { name: "Breast", exact: true })).toHaveCount(0);
+});

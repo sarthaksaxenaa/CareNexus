@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useRequireSex } from "@/lib/useRequireSex";
+import { isSex, readStoredUser, type Sex } from "@/lib/sex";
 import type { ChatMessage } from "@/lib/api";
 import ChatSidebar from "@/components/ChatSidebar";
 import MessageBubble from "@/components/MessageBubble";
@@ -30,9 +31,14 @@ export default function ChatPage() {
   const [showMap, setShowMap] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState<RegionId | null>(null);
 
+  const [sex, setSex] = useState<Sex | null>(null);
+
   useEffect(() => {
+    // Browser-only state, read after mount so server and client HTML match.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsAuthenticated(api.isAuthenticated());
+    const stored = readStoredUser()?.sex;
+    setSex(api.isAuthenticated() && isSex(stored) ? stored : null);
   }, []);
   useRequireSex(isAuthenticated);
 
@@ -295,7 +301,7 @@ export default function ChatPage() {
             aria-label="Body map panel"
             className="fixed inset-y-0 right-0 z-40 w-80 border-l border-edge-soft bg-void shadow-2xl shadow-black/70 lg:static lg:z-auto lg:shadow-none"
           >
-            <BodyMapPanel selected={selectedRegion} onSelect={handleRegionSelect} />
+            <BodyMapPanel sex={sex} selected={selectedRegion} onSelect={handleRegionSelect} />
           </aside>
         )}
       </div>
