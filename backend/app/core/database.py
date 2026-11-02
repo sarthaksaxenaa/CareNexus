@@ -23,8 +23,33 @@ def to_async_url(url: str) -> str:
         return url.replace("sqlite:///", "sqlite+aiosqlite:///", 1)
     for scheme in ("postgresql://", "postgres://"):
         if url.startswith(scheme):
-            return "postgresql+asyncpg://" + url[len(scheme) :]
+            return _asyncpg_query("postgresql+asyncpg://" + url[len(scheme) :])
     return url
+
+
+def _asyncpg_query(url: str) -> str:
+    """Translate libpq query options into the ones asyncpg understands.
+
+    Managed Postgres hosts (Neon, Render, Supabase) give ``?sslmode=require``
+    and sometimes ``channel_binding=require``. asyncpg takes ``ssl=`` instead
+    and raises on the others, so rewrite ``sslmode`` and drop the rest.
+    """
+    base, sep, query = url.partition("?")
+    if not sep:
+        return url
+    pairs = [p for p in query.split("&") if p]
+    keys = {p.partition("=")[0] for p in pairs}
+    kept = []
+    for pair in pairs:
+        key, _, value = pair.partition("=")
+        if key == "channel_binding":
+            continue
+        if key == "sslmode":
+            if "ssl" in keys:
+                continue
+            pair = f"ssl={value}"
+        kept.append(pair)
+    return base + ("?" + "&".join(kept) if kept else "")
 
 
 DATABASE_URL = to_async_url(settings.DATABASE_URL)
