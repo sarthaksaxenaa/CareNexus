@@ -103,6 +103,7 @@ async def registered_user(client: AsyncClient) -> dict:
     payload = {
         "email": f"e2e_{unique}@test.com",
         "password": "SecurePass#123",
+        "sex": "male",
         "full_name": f"E2E User {unique}",
     }
     resp = await client.post("/api/v1/auth/register", json=payload)

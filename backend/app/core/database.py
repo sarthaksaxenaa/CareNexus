@@ -1,6 +1,6 @@
 """Database engine, session factory, and base model for CareNexus."""
 
-from sqlalchemy import event
+from sqlalchemy import event, inspect, text
 from sqlalchemy.exc import ArgumentError
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -123,6 +123,27 @@ async def get_db():
             await session.close()
 
 
+# Columns added after a table first shipped. create_all() creates missing
+# tables but never alters existing ones, so a database created by an earlier
+# version (production included) gets these added at start-up. Additive and
+# nullable only: anything that rewrites data needs a real migration tool.
+ADDITIVE_COLUMNS: tuple[tuple[str, str, str], ...] = (("users", "sex", "VARCHAR(6)"),)
+
+
+def apply_additive_migrations(sync_conn) -> None:
+    """Add any ADDITIVE_COLUMNS a table lacks. Safe to run on every start."""
+    inspector = inspect(sync_conn)
+    tables = set(inspector.get_table_names())
+    for table, column, ddl in ADDITIVE_COLUMNS:
+        if table not in tables:
+            continue  # create_all() will build it with the column
+        existing = {c["name"] for c in inspector.get_columns(table)}
+        if column not in existing:
+            # Names come from the constant above, never from input.
+            sync_conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}"))
+
+
 async def init_db():
     async with engine.begin() as conn:
+        await conn.run_sync(apply_additive_migrations)
         await conn.run_sync(Base.metadata.create_all)

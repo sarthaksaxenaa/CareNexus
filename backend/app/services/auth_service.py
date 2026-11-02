@@ -123,13 +123,14 @@ async def get_user_by_id(db: AsyncSession, user_id: uuid.UUID) -> User | None:
 
 
 async def create_user(
-    db: AsyncSession, email: str, password: str, full_name: str
+    db: AsyncSession, email: str, password: str, full_name: str, sex: str | None = None
 ) -> User:
     """Create a new user with hashed password."""
     user = User(
         email=normalize_email(email),
         hashed_password=hash_password(password),
         full_name=full_name.strip(),
+        sex=sex,
     )
     db.add(user)
     await db.flush()

@@ -81,6 +81,7 @@ async def test_duplicate_email_with_different_case_is_a_conflict(client: AsyncCl
         json={
             "email": f"{local.upper()}@test.com",
             "password": "SecurePass#123",
+            "sex": "male",
             "full_name": "Case Twin",
         },
     )

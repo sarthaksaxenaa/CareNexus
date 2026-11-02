@@ -10,7 +10,12 @@ async def register(client: AsyncClient, email: str | None = None) -> dict:
     email = email or f"user_{uuid.uuid4().hex[:8]}@test.com"
     resp = await client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": "SecurePass#123", "full_name": "Test User"},
+        json={
+            "email": email,
+            "password": "SecurePass#123",
+            "sex": "male",
+            "full_name": "Test User",
+        },
     )
     assert resp.status_code == 201, resp.text
     return resp.json()

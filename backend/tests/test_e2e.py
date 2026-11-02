@@ -32,6 +32,7 @@ class TestAuthFlow:
             json={
                 "email": "auth_flow_1@test.com",
                 "password": "Password#123",
+                "sex": "male",
                 "full_name": "Auth Flow User",
             },
         )
@@ -50,6 +51,7 @@ class TestAuthFlow:
         payload = {
             "email": "duplicate@test.com",
             "password": "Password#123",
+            "sex": "male",
             "full_name": "Dup User",
         }
         resp1 = await client.post("/api/v1/auth/register", json=payload)
@@ -65,7 +67,12 @@ class TestAuthFlow:
         email, password = "login_ok@test.com", "ValidPass#99"
         await client.post(
             "/api/v1/auth/register",
-            json={"email": email, "password": password, "full_name": "Login OK"},
+            json={
+                "email": email,
+                "password": password,
+                "sex": "male",
+                "full_name": "Login OK",
+            },
         )
         resp = await client.post(
             "/api/v1/auth/login",
@@ -82,7 +89,12 @@ class TestAuthFlow:
         email = "login_bad@test.com"
         await client.post(
             "/api/v1/auth/register",
-            json={"email": email, "password": "Correct#123", "full_name": "Bad Login"},
+            json={
+                "email": email,
+                "password": "Correct#123",
+                "sex": "male",
+                "full_name": "Bad Login",
+            },
         )
         resp = await client.post(
             "/api/v1/auth/login",
@@ -134,6 +146,7 @@ class TestAuthFlow:
             json={
                 "email": "short@test.com",
                 "password": "Sh0rt",
+                "sex": "male",
                 "full_name": "Short PW",
             },
         )
@@ -147,6 +160,7 @@ class TestAuthFlow:
             json={
                 "email": "not-an-email",
                 "password": "Password#123",
+                "sex": "male",
                 "full_name": "Bad Email",
             },
         )
@@ -596,6 +610,7 @@ class TestCrossUserIsolation:
             json={
                 "email": "iso_a@test.com",
                 "password": "Password#123",
+                "sex": "male",
                 "full_name": "User A",
             },
         )
@@ -614,6 +629,7 @@ class TestCrossUserIsolation:
             json={
                 "email": "iso_b@test.com",
                 "password": "Password#123",
+                "sex": "male",
                 "full_name": "User B",
             },
         )
@@ -638,6 +654,7 @@ class TestCrossUserIsolation:
             json={
                 "email": "cross_a@test.com",
                 "password": "Password#123",
+                "sex": "male",
                 "full_name": "Cross A",
             },
         )
@@ -656,6 +673,7 @@ class TestCrossUserIsolation:
             json={
                 "email": "cross_b@test.com",
                 "password": "Password#123",
+                "sex": "male",
                 "full_name": "Cross B",
             },
         )
@@ -679,6 +697,7 @@ class TestCrossUserIsolation:
             json={
                 "email": "hp_a@test.com",
                 "password": "Password#123",
+                "sex": "male",
                 "full_name": "HP A",
             },
         )
@@ -696,6 +715,7 @@ class TestCrossUserIsolation:
             json={
                 "email": "hp_b@test.com",
                 "password": "Password#123",
+                "sex": "male",
                 "full_name": "HP B",
             },
         )
@@ -727,6 +747,7 @@ class TestFullPipeline:
             json={
                 "email": "journey@test.com",
                 "password": "Journey#2026",
+                "sex": "male",
                 "full_name": "Journey User",
             },
         )

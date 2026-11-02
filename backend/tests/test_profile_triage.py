@@ -98,6 +98,7 @@ class TestChatRouteUsesProfile:
             json={
                 "email": f"isolated_{other}@test.com",
                 "password": "SecurePass#123",
+                "sex": "male",
                 "full_name": "Isolated User",
             },
         )

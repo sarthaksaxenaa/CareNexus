@@ -1,10 +1,19 @@
 """Pydantic schemas for authentication endpoints."""
 
 import uuid
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from app.schemas.common import UTCDateTime
+
+# Clinical sex: it decides which conditions are possible, so only these two.
+Sex = Literal["male", "female"]
+
+
+def _normalise_sex(value):
+    return value.strip().lower() if isinstance(value, str) else value
+
 
 # ─── Request Schemas ──────────────────────────────
 
@@ -18,6 +27,9 @@ class UserRegisterRequest(BaseModel):
         description="Password must be 8-128 characters",
     )
     full_name: str = Field(..., min_length=2, max_length=100)
+    sex: Sex
+
+    _sex = field_validator("sex", mode="before")(_normalise_sex)
 
     @field_validator("full_name")
     @classmethod
@@ -26,6 +38,14 @@ class UserRegisterRequest(BaseModel):
         if len(value) < 2:
             raise ValueError("Name must have at least 2 visible characters")
         return value
+
+
+class UserUpdateRequest(BaseModel):
+    """What a signed-in user may change about their own account."""
+
+    sex: Sex
+
+    _sex = field_validator("sex", mode="before")(_normalise_sex)
 
 
 class UserLoginRequest(BaseModel):
@@ -47,6 +67,7 @@ class UserResponse(BaseModel):
     id: uuid.UUID
     email: str
     full_name: str
+    sex: Sex | None = None
     is_active: bool
     is_verified: bool
     created_at: UTCDateTime

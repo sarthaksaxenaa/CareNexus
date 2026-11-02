@@ -22,12 +22,33 @@ PASSWORD = "SecurePass#123"
         {
             "email": "a@example.com",
             "password": "short",
+            "sex": "male",
             "full_name": "Asha",
         },  # < 8 chars
-        {"email": "a@example.com", "password": "x" * 129, "full_name": "Asha"},  # > 128
-        {"email": "not-an-email", "password": PASSWORD, "full_name": "Asha"},
-        {"email": "a@example.com", "password": PASSWORD, "full_name": "A"},  # < 2 chars
-        {"email": "a@example.com", "password": PASSWORD, "full_name": "    "},  # blank
+        {
+            "email": "a@example.com",
+            "password": "x" * 129,
+            "sex": "male",
+            "full_name": "Asha",
+        },  # > 128
+        {
+            "email": "not-an-email",
+            "password": PASSWORD,
+            "sex": "male",
+            "full_name": "Asha",
+        },
+        {
+            "email": "a@example.com",
+            "password": PASSWORD,
+            "sex": "male",
+            "full_name": "A",
+        },  # < 2 chars
+        {
+            "email": "a@example.com",
+            "password": PASSWORD,
+            "sex": "male",
+            "full_name": "    ",
+        },  # blank
         {"email": "a@example.com", "password": PASSWORD},  # missing name
     ],
 )
@@ -40,7 +61,12 @@ async def test_register_trims_the_name(client: AsyncClient):
     email = f"trim_{uuid.uuid4().hex[:6]}@example.com"
     resp = await client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": PASSWORD, "full_name": "  Asha Verma  "},
+        json={
+            "email": email,
+            "password": PASSWORD,
+            "sex": "male",
+            "full_name": "  Asha Verma  ",
+        },
     )
     assert resp.status_code == 201
     assert resp.json()["user"]["full_name"] == "Asha Verma"
@@ -52,7 +78,12 @@ async def test_passwords_differing_after_72_bytes_are_different(client: AsyncCli
     base = "p" * 80
     await client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": base + "A", "full_name": "Long Pass"},
+        json={
+            "email": email,
+            "password": base + "A",
+            "sex": "male",
+            "full_name": "Long Pass",
+        },
     )
     resp = await client.post(
         "/api/v1/auth/login", json={"email": email, "password": base + "B"}
@@ -65,7 +96,12 @@ async def test_unicode_password_round_trips(client: AsyncClient):
     password = "पासवर्ड-密码-🔒-secure"
     await client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": password, "full_name": "Uni Code"},
+        json={
+            "email": email,
+            "password": password,
+            "sex": "male",
+            "full_name": "Uni Code",
+        },
     )
     resp = await client.post(
         "/api/v1/auth/login", json={"email": email, "password": password}

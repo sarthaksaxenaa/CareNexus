@@ -17,6 +17,9 @@ class User(Base):
     )
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     full_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    # "male" or "female". Nullable only for accounts created before it was
+    # asked; the app asks those users once, right after they sign in.
+    sex: Mapped[str | None] = mapped_column(String(6), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)

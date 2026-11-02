@@ -43,6 +43,7 @@ async def test_register_endpoint_exists():
                 json={
                     "email": "test@example.com",
                     "password": "testpassword123",
+                    "sex": "male",
                     "full_name": "Test User",
                 },
             )

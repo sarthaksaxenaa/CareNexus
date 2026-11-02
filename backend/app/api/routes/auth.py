@@ -14,6 +14,7 @@ from app.schemas.auth import (
     UserLoginRequest,
     UserRegisterRequest,
     UserResponse,
+    UserUpdateRequest,
 )
 from app.services.auth_service import (
     authenticate_user,
@@ -50,7 +51,9 @@ async def register(
         )
 
     # Create new user
-    user = await create_user(db, request.email, request.password, request.full_name)
+    user = await create_user(
+        db, request.email, request.password, request.full_name, request.sex
+    )
 
     # Generate tokens
     tokens = TokenResponse(
@@ -97,6 +100,20 @@ async def login(
 @router.get("/me", response_model=UserResponse)
 async def get_me(current_user: User = Depends(get_current_user)):
     """Get the currently authenticated user's profile."""
+    return UserResponse.model_validate(current_user)
+
+
+@router.patch("/me", response_model=UserResponse)
+async def update_me(
+    request: UserUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update the caller's own account. Only sex can change here; the schema
+    has no other fields, so extra keys such as email or is_active are ignored."""
+    current_user.sex = request.sex
+    await db.flush()
+    await db.refresh(current_user)
     return UserResponse.model_validate(current_user)
 
 
