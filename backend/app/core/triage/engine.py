@@ -113,7 +113,7 @@ async def _llm_analyze(
     if settings.LLM_PROVIDER == "openai" and settings.OPENAI_API_KEY:
         return await _call_openai(messages, settings)
     elif settings.LLM_PROVIDER == "gemini" and settings.GEMINI_API_KEY:
-        return await _call_gemini(user_message, messages, settings)
+        return await _call_gemini(messages, settings)
     else:
         logger.info("No LLM API key configured, using rule-based fallback")
         # Forward parsed symptoms and risk factors; dropping them here silently
@@ -138,25 +138,27 @@ async def _call_openai(messages: list[dict], settings) -> dict:
     return _parse_llm_response(content)
 
 
-async def _call_gemini(user_message: str, messages: list[dict], settings) -> dict:
-    """Call Google Gemini API for symptom analysis."""
-    try:
-        from google import genai
+async def _call_gemini(messages: list[dict], settings) -> dict:
+    """Call Google Gemini API for symptom analysis.
 
-        client = genai.Client(api_key=settings.GEMINI_API_KEY)
+    The prompt is the system prompt, the recent conversation, and the final
+    user turn, which carries the retrieved conditions and risk factors. (It
+    used to send only the raw message, so Gemini answered ungrounded.)
+    Errors propagate: analyze_symptoms() falls back with the full context.
+    """
+    from google import genai
 
-        # Build prompt from messages
-        prompt = messages[0]["content"] + "\n\nUser: " + user_message
-
-        response = client.models.generate_content(
-            model=settings.LLM_MODEL,
-            contents=prompt,
-        )
-
-        return _parse_llm_response(response.text)
-    except Exception as e:
-        logger.warning("Gemini API failed: %s", e)
-        return _fallback_response(user_message)
+    client = genai.Client(api_key=settings.GEMINI_API_KEY)
+    system, *turns = messages
+    prompt = "\n\n".join(
+        [system["content"]]
+        + [f"{m['role'].capitalize()}: {m['content']}" for m in turns]
+    )
+    response = client.models.generate_content(
+        model=settings.LLM_MODEL,
+        contents=prompt,
+    )
+    return _parse_llm_response(response.text)
 
 
 def _parse_llm_response(content: str) -> dict:
