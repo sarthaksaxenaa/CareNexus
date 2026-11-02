@@ -122,3 +122,44 @@ test("a real GPU context loss falls back to the list, and 3D can be retried", as
   await expect(panel(page).locator("canvas")).toBeVisible();
   await expect(panel(page).getByRole("status")).toHaveCount(0);
 });
+
+test.describe("realistic body", () => {
+  // No auto-rotation, so the body faces the camera and a point on screen is stable.
+  test.use({ reducedMotion: "reduce" });
+
+  async function openRealistic(page: Page) {
+    await openMap(page);
+    const view3d = panel(page).getByRole("tab", { name: "3D view" });
+    test.skip(await view3d.isDisabled(), "this browser has no WebGL");
+    await view3d.click();
+    await expect(panel(page).locator('[data-body="realistic"]')).toBeVisible({ timeout: 30_000 });
+    return panel(page).locator("canvas");
+  }
+
+  test("loads in place of the mannequin, and a click picks the region under the pointer", async ({ page }) => {
+    const canvas = await openRealistic(page);
+    const box = (await canvas.boundingBox())!;
+    // The vertical framing is fixed by the camera, so the belly is at the same height at any panel size.
+    await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.43);
+    await expect(page.getByLabel("Describe your symptoms")).toHaveValue(/abdomen/);
+  });
+
+  test("clicking empty space beside the body selects nothing", async ({ page }) => {
+    const canvas = await openRealistic(page);
+    const box = (await canvas.boundingBox())!;
+    await page.mouse.click(box.x + box.width * 0.04, box.y + box.height * 0.5);
+    await expect(page.getByLabel("Describe your symptoms")).toHaveValue("");
+  });
+});
+
+test("falls back to the sculpted mannequin when the model cannot load", async ({ page }) => {
+  await page.route("**/models/body-*.glb", (route) => route.abort());
+  await openMap(page);
+  const view3d = panel(page).getByRole("tab", { name: "3D view" });
+  test.skip(await view3d.isDisabled(), "this browser has no WebGL");
+  await view3d.click();
+  await expect(panel(page).locator('[data-body="mannequin"]')).toBeVisible();
+  await page.waitForTimeout(1500);
+  await expect(panel(page).locator('[data-body="mannequin"]')).toBeVisible();
+  await expect(panel(page).locator("canvas")).toBeVisible();
+});
