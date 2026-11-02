@@ -20,4 +20,4 @@ services:
       - key: DATABASE_URL
         sync: false # Neon connection string
       - key: ALLOWED_ORIGINS
-        sync: false # JSON list, e.g. ["https://carenexus.vercel.app"]
+        sync: false # JSON list, e.g. ["https://carenexus-health.vercel.app"]

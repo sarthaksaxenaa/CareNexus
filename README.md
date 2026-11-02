@@ -12,11 +12,11 @@
 
 **Describe what you feel. CareNexus tells you how urgently to get care, and what to do in the meantime.**
 
-### [Try it live → care-nexus-ochre.vercel.app](https://care-nexus-ochre.vercel.app)
+### [Try it live → carenexus-health.vercel.app](https://carenexus-health.vercel.app)
 
 <sub>The API runs on a free instance that sleeps when idle; the first request after a quiet spell can take up to a minute.</sub>
 
-[Live demo](https://care-nexus-ochre.vercel.app) · [Quick start](#quick-start) · [How it decides](#how-a-message-is-assessed) · [Architecture](#architecture) · [Quality](#quality) · [API](#api)
+[Live demo](https://carenexus-health.vercel.app) · [Quick start](#quick-start) · [How it decides](#how-a-message-is-assessed) · [Architecture](#architecture) · [Quality](#quality) · [API](#api)
 
 </div>
 
@@ -82,7 +82,7 @@ No configuration is needed. For Gemini answers, copy `backend/.env.example` to `
 
 | Part | Host | URL |
 |---|---|---|
-| Web app (Next.js) | **Vercel** | [care-nexus-ochre.vercel.app](https://care-nexus-ochre.vercel.app) |
+| Web app (Next.js) | **Vercel** | [carenexus-health.vercel.app](https://carenexus-health.vercel.app) |
 | API (FastAPI, Docker) | **Render** | [carenexus-api.onrender.com/docs](https://carenexus-api.onrender.com/docs) |
 | Database | **Neon** (serverless PostgreSQL) | private |
 
@@ -91,7 +91,7 @@ Every push to `main` redeploys both apps. The API is described as code in [`rend
 | Variable | Where | Value |
 |---|---|---|
 | `DATABASE_URL` | Render | Neon connection string, **direct** (not pooled) |
-| `ALLOWED_ORIGINS` | Render | `["https://care-nexus-ochre.vercel.app"]` |
+| `ALLOWED_ORIGINS` | Render | `["https://carenexus-health.vercel.app"]` |
 | `NEXT_PUBLIC_API_URL` | Vercel | `https://carenexus-api.onrender.com` (read at build time) |
 
 The whole backend test suite also runs against PostgreSQL in CI, so what passes there is what runs in production.
