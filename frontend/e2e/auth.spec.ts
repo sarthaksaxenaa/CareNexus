@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { PASSWORD, register, uniqueEmail } from "./helpers";
+import { PASSWORD, chooseSex, register, uniqueEmail } from "./helpers";
 
 test("register lands on the chat and shows the user's name", async ({ page }) => {
   await register(page, "Ravi Kumar");
@@ -37,6 +37,7 @@ test("registering an existing e-mail is refused", async ({ page }) => {
   await page.getByLabel("Full name").fill("Second Person");
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(PASSWORD);
+  await chooseSex(page, "Male");
   await page.getByRole("button", { name: "Create account" }).click();
   await expect(page.getByRole("main").getByRole("alert")).toContainText(/already exists/i);
 });

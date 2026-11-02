@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { useRequireSex } from "@/lib/useRequireSex";
 import Navbar from "@/components/Navbar";
 import { ALERT_ERROR, TRACKED } from "@/lib/styles";
 import { TRIAGE, TRIAGE_ORDER } from "@/lib/triage";
@@ -51,6 +52,7 @@ function dayLabel(date: string, long = false): string {
 
 export default function DashboardPage() {
   const router = useRouter();
+  useRequireSex(api.isAuthenticated());
   const [overview, setOverview] = useState<OverviewStats | null>(null);
   const [mine, setMine] = useState<MyStats | null>(null);
   const [triage, setTriage] = useState<TriageData | null>(null);

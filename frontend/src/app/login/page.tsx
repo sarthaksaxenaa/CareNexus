@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { needsSex } from "@/lib/sex";
 import { INPUT_CLASS, LABEL_CLASS, BTN_PRIMARY } from "@/lib/styles";
 import AuthLayout from "@/components/AuthLayout";
 
@@ -21,8 +22,8 @@ export default function LoginPage() {
 
     try {
       const data = await api.login(email, password);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      router.push("/chat");
+      // Accounts from before sex was asked choose it once, then carry on.
+      router.push(needsSex(data.user) ? "/onboarding" : "/chat");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {

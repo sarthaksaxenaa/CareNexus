@@ -1,18 +1,23 @@
 /** API client for CareNexus backend */
 
 import { NETWORK_ERROR, errorMessage } from "./errors";
+import { storeUser, type Sex } from "./sex";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+interface User {
+  id: string;
+  email: string;
+  full_name: string;
+  /** Null only for accounts created before sex was asked. */
+  sex: Sex | null;
+  is_active: boolean;
+  is_verified: boolean;
+  created_at: string;
+}
+
 interface AuthResponse {
-  user: {
-    id: string;
-    email: string;
-    full_name: string;
-    is_active: boolean;
-    is_verified: boolean;
-    created_at: string;
-  };
+  user: User;
   tokens: {
     access_token: string;
     refresh_token: string;
@@ -143,12 +148,13 @@ export class ApiClient {
 
   // ─── Auth ─────────────────────────────────
 
-  async register(email: string, password: string, fullName: string): Promise<AuthResponse> {
+  async register(email: string, password: string, fullName: string, sex: Sex): Promise<AuthResponse> {
     const data = await this.request<AuthResponse>("/api/v1/auth/register", {
       method: "POST",
-      body: JSON.stringify({ email, password, full_name: fullName }),
+      body: JSON.stringify({ email, password, full_name: fullName, sex }),
     });
     this.setTokens(data.tokens.access_token, data.tokens.refresh_token);
+    storeUser(data.user);
     return data;
   }
 
@@ -158,11 +164,25 @@ export class ApiClient {
       body: JSON.stringify({ email, password }),
     });
     this.setTokens(data.tokens.access_token, data.tokens.refresh_token);
+    storeUser(data.user);
     return data;
   }
 
-  async getMe() {
-    return this.request("/api/v1/auth/me");
+  /** The signed-in account, refreshed into local storage. */
+  async getMe(): Promise<User> {
+    const user = await this.request<User>("/api/v1/auth/me");
+    storeUser(user);
+    return user;
+  }
+
+  /** Set the account's sex (asked once for accounts created before it). */
+  async updateSex(sex: Sex): Promise<User> {
+    const user = await this.request<User>("/api/v1/auth/me", {
+      method: "PATCH",
+      body: JSON.stringify({ sex }),
+    });
+    storeUser(user);
+    return user;
   }
 
   private setTokens(access: string, refresh: string) {
@@ -240,4 +260,4 @@ export class ApiClient {
 }
 
 export const api = new ApiClient();
-export type { AuthResponse, ChatMessage, ChatResponse, ChatSessionInfo };
+export type { AuthResponse, ChatMessage, ChatResponse, ChatSessionInfo, User };

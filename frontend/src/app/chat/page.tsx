@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { useRequireSex } from "@/lib/useRequireSex";
 import type { ChatMessage } from "@/lib/api";
 import ChatSidebar from "@/components/ChatSidebar";
 import MessageBubble from "@/components/MessageBubble";
@@ -33,6 +34,7 @@ export default function ChatPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsAuthenticated(api.isAuthenticated());
   }, []);
+  useRequireSex(isAuthenticated);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });

@@ -8,13 +8,24 @@ export function uniqueEmail(tag = "user"): string {
   return `${tag}.${Date.now()}.${Math.random().toString(36).slice(2, 7)}@example.com`;
 }
 
+/** Pick Male or Female in the sex tiles (the radio itself is visually hidden). */
+export async function chooseSex(page: Page, sex: "Male" | "Female") {
+  await page.getByRole("main").getByText(sex, { exact: true }).click();
+  await expect(page.getByRole("radio", { name: sex, exact: true })).toBeChecked();
+}
+
 /** Register through the UI and wait for the chat page. */
-export async function register(page: Page, name = "Asha Verma"): Promise<string> {
+export async function register(
+  page: Page,
+  name = "Asha Verma",
+  sex: "Male" | "Female" = "Female",
+): Promise<string> {
   const email = uniqueEmail();
   await page.goto("/register");
   await page.getByLabel("Full name").fill(name);
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(PASSWORD);
+  await chooseSex(page, sex);
   await page.getByRole("button", { name: "Create account" }).click();
   await expect(page).toHaveURL(/\/chat$/);
   return email;

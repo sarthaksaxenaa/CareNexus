@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import Navbar from "@/components/Navbar";
+import SexField from "@/components/SexField";
+import { isSex, readStoredUser, SEX_OPTIONS, type Sex } from "@/lib/sex";
+import { useRequireSex } from "@/lib/useRequireSex";
 import {
   ALERT_ERROR,
   ALERT_SUCCESS,
@@ -36,7 +39,6 @@ const EMPTY_FORM: FormState = {
 };
 
 const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"] as const;
-const GENDERS = ["Male", "Female", "Non-binary", "Prefer not to say"] as const;
 
 // `used` marks the fields the triage engine reads (core/triage/engine.py).
 const FIELDS: { key: keyof FormState; label: string; used: boolean }[] = [
@@ -51,7 +53,8 @@ const FIELDS: { key: keyof FormState; label: string; used: boolean }[] = [
 function toForm(p: HealthProfile): FormState {
   return {
     age: p.age?.toString() ?? "",
-    gender: p.gender ?? "",
+    // Older profiles stored free text ("Male"); only male/female survive.
+    gender: isSex(p.gender?.toLowerCase()) ? (p.gender as string).toLowerCase() : "",
     blood_group: p.blood_group ?? "",
     known_conditions: p.known_conditions ?? "",
     current_medications: p.current_medications ?? "",
@@ -68,6 +71,9 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  // Sex lives on the account (asked at sign-up); the profile mirrors it.
+  const [accountSex, setAccountSex] = useState<Sex | "">("");
+  useRequireSex(api.isAuthenticated());
 
   const handleChange =
     (field: keyof FormState) =>
@@ -81,11 +87,21 @@ export default function ProfilePage() {
     }
 
     let cancelled = false;
+    // The account is the source of truth for sex; fall back to the local copy offline.
+    api
+      .getMe()
+      .then((me) => me.sex)
+      .catch(() => readStoredUser()?.sex)
+      .then((value) => {
+        if (cancelled || !isSex(value)) return;
+        setAccountSex(value);
+        setForm((prev) => ({ ...prev, gender: value }));
+      });
     (api.getHealthProfile() as Promise<HealthProfile>)
       .then((data) => {
         if (cancelled) return;
         setProfile(data);
-        setForm(toForm(data));
+        setForm((prev) => ({ ...toForm(data), gender: prev.gender || toForm(data).gender }));
       })
       .catch((err: unknown) => {
         if (cancelled) return;
@@ -121,11 +137,15 @@ export default function ProfilePage() {
     };
 
     try {
+      if (isSex(form.gender) && form.gender !== accountSex) {
+        await api.updateSex(form.gender);
+        setAccountSex(form.gender);
+      }
       const saved = (await (profile
         ? api.updateHealthProfile(payload)
         : api.createHealthProfile(payload))) as HealthProfile;
       setProfile(saved);
-      setForm(toForm(saved));
+      setForm({ ...toForm(saved), gender: isSex(form.gender) ? form.gender : "" });
       setIsEditing(false);
       setSuccess(profile ? "Profile saved." : "Profile created.");
     } catch (err: unknown) {
@@ -181,9 +201,17 @@ export default function ProfilePage() {
                         {f.label}
                         {f.used && <span className="sr-only"> (used in assessments)</span>}
                       </dt>
-                      <dd className={profile[f.key] ? "text-ink" : "font-light text-ink-4"}>
-                        {profile[f.key] || "Not provided"}
-                      </dd>
+                      {(() => {
+                        const value =
+                          f.key === "gender"
+                            ? SEX_OPTIONS.find((o) => o.value === (accountSex || form.gender))?.label
+                            : profile[f.key];
+                        return (
+                          <dd className={value ? "text-ink" : "font-light text-ink-4"}>
+                            {value || "Not provided"}
+                          </dd>
+                        );
+                      })()}
                     </div>
                   ))}
                 </dl>
@@ -209,16 +237,12 @@ export default function ProfilePage() {
                           className={INPUT_CLASS}
                         />
                       </div>
-                      <div>
-                        <label htmlFor={fieldId("gender")} className={LABEL_CLASS}>Sex</label>
-                        <select id={fieldId("gender")} value={form.gender} onChange={handleChange("gender")} className={INPUT_CLASS}>
-                          <option value="">Not provided</option>
-                          {GENDERS.map((g) => (
-                            <option key={g} value={g}>{g}</option>
-                          ))}
-                        </select>
-                      </div>
                     </div>
+                    <SexField
+                      value={isSex(form.gender) ? form.gender : ""}
+                      onChange={(value) => setForm((prev) => ({ ...prev, gender: value }))}
+                      name="profile-sex"
+                    />
                     <div>
                       <label htmlFor={fieldId("known_conditions")} className={LABEL_CLASS}>Known conditions</label>
                       <textarea

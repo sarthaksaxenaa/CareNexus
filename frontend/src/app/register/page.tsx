@@ -6,23 +6,29 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { INPUT_CLASS, LABEL_CLASS, BTN_PRIMARY } from "@/lib/styles";
 import AuthLayout from "@/components/AuthLayout";
+import SexField from "@/components/SexField";
+import type { Sex } from "@/lib/sex";
 
 export default function RegisterPage() {
   const router = useRouter();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [sex, setSex] = useState<Sex | "">("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    if (!sex) {
+      setError("Please choose your sex.");
+      return;
+    }
     setIsLoading(true);
 
     try {
-      const data = await api.register(email, password, fullName);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      await api.register(email, password, fullName, sex);
       router.push("/chat");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Registration failed");
@@ -88,6 +94,8 @@ export default function RegisterPage() {
             placeholder="At least 8 characters"
           />
         </div>
+
+        <SexField value={sex} onChange={setSex} name="register-sex" />
 
         <button type="submit" disabled={isLoading} className={BTN_PRIMARY}>
           {isLoading ? "Creating account..." : "Create account"}

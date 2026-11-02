@@ -1,15 +1,18 @@
 import { expect, test } from "@playwright/test";
-import { register, send } from "./helpers";
+import { chooseSex, register, send } from "./helpers";
 
 test("create, view and edit a health profile", async ({ page }) => {
   await register(page);
   await page.goto("/profile");
   await page.getByLabel("Age").fill("58");
-  await page.getByLabel("Sex").selectOption("Male");
+  // Sex comes from sign-up (female) and can be changed here.
+  await expect(page.getByRole("radio", { name: "Female", exact: true })).toBeChecked();
+  await chooseSex(page, "Male");
   await page.getByLabel("Known conditions").fill("Type 2 diabetes");
   await page.getByRole("button", { name: "Create profile" }).click();
   await expect(page.getByText("Profile created.")).toBeVisible();
   await expect(page.getByText("Type 2 diabetes")).toBeVisible();
+  await expect(page.getByRole("definition").filter({ hasText: /^Male$/ })).toBeVisible();
 
   await page.getByRole("button", { name: "Edit profile" }).click();
   await page.getByLabel("Age").fill("59");
