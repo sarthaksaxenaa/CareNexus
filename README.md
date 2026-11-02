@@ -60,8 +60,15 @@ Requires **Python 3.12+** and **Node.js 20+**.
 ```bash
 git clone https://github.com/sarthaksaxenaa/CareNexus.git
 cd CareNexus
-python run.py            # Windows: double-click start.ps1
 ```
+
+Then start it with one action:
+
+| Platform | Start |
+|---|---|
+| Windows | double-click **`start.cmd`** (or right-click `start.ps1` > Run with PowerShell) |
+| macOS / Linux | `./start.sh` |
+| Any | `python run.py` |
 
 `run.py` creates the Python environment, installs dependencies whenever `requirements.txt` or `package-lock.json` changes, starts both servers and opens **http://localhost:3000**. API docs are at **http://localhost:8000/docs**.
 
@@ -209,7 +216,7 @@ CareNexus/
 │   └── scripts/readme/        generators for this README's artwork
 ├── docs/                      architecture.md, generated assets
 ├── .github/workflows/         ci.yml, readme-assets.yml
-└── run.py, start.ps1, docker-compose.yml
+└── run.py, start.cmd, start.ps1, start.sh, docker-compose.yml
 ```
 
 </details>
