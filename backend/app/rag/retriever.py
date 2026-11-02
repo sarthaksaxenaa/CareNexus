@@ -13,10 +13,12 @@ improving triage accuracy.
 import logging
 from dataclasses import dataclass
 
-from app.rag.knowledge_base import MedicalCondition
+from app.rag.knowledge_base import ALL_CONDITIONS, MedicalCondition
 from app.rag.vectorizer import get_vectorizer
 
 logger = logging.getLogger(__name__)
+
+_SEX_LIMITED = sum(1 for c in ALL_CONDITIONS if c.sex is not None)
 
 
 @dataclass(frozen=True, slots=True)
@@ -38,6 +40,7 @@ def retrieve(
     query: str,
     top_k: int = 3,
     threshold: float = 0.08,
+    sex: str | None = None,
 ) -> list[RetrievalResult]:
     """Retrieve relevant medical conditions for a user query.
 
@@ -45,12 +48,19 @@ def retrieve(
         query: User's symptom description or health question.
         top_k: Maximum number of conditions to retrieve.
         threshold: Minimum relevance score to include a result.
+        sex: The patient's sex ("male" or "female"). Conditions limited to
+            the other sex are dropped; None filters nothing.
 
     Returns:
         List of RetrievalResult objects sorted by relevance.
     """
     vectorizer = get_vectorizer()
-    matches = vectorizer.search(query, top_k=top_k, threshold=threshold)
+    # Over-fetch by the number of sex-limited conditions, so filtering never
+    # leaves fewer than top_k results when enough relevant ones exist.
+    matches = vectorizer.search(query, top_k=top_k + _SEX_LIMITED, threshold=threshold)
+    if sex is not None:
+        matches = [(c, s) for c, s in matches if c.sex in (None, sex)]
+    matches = matches[:top_k]
 
     results: list[RetrievalResult] = []
     for condition, score in matches:
@@ -74,7 +84,7 @@ def retrieve(
     return results
 
 
-def build_rag_context(query: str, top_k: int = 3) -> str:
+def build_rag_context(query: str, top_k: int = 3, sex: str | None = None) -> str:
     """Build a complete RAG context string for LLM prompt augmentation.
 
     This is the primary interface used by the triage engine. It returns
@@ -84,11 +94,12 @@ def build_rag_context(query: str, top_k: int = 3) -> str:
     Args:
         query: User's symptom description.
         top_k: Number of conditions to include in context.
+        sex: The patient's sex, passed on to retrieve().
 
     Returns:
         Formatted context string, or empty string if no relevant matches.
     """
-    results = retrieve(query, top_k=top_k)
+    results = retrieve(query, top_k=top_k, sex=sex)
 
     if not results:
         return ""

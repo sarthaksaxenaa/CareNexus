@@ -33,7 +33,9 @@ async def analyze_symptoms(
         user_message: The patient's symptom description.
         conversation_history: Previous messages for context.
         patient_age: Patient's age from health profile.
-        patient_gender: Patient's gender from health profile.
+        patient_gender: Patient's sex ("male" or "female"); anything else
+            is treated as unknown. Conditions that cannot apply to that sex
+            are never retrieved.
         known_conditions: Known medical conditions from health profile.
     """
     # Step 1: Check for red-flag emergency symptoms
@@ -44,6 +46,8 @@ async def analyze_symptoms(
             "triage_level": TriageLevel.RED,
             "sources": "Emergency triage protocol",
         }
+
+    sex = normalise_sex(patient_gender)
 
     # Step 2: Parse symptoms for structured analysis
     parsed = parse_symptoms(user_message)
@@ -58,11 +62,17 @@ async def analyze_symptoms(
     # Step 4: Try LLM-based analysis
     try:
         return await _llm_analyze(
-            user_message, conversation_history, parsed, risk_factors
+            user_message, conversation_history, parsed, risk_factors, sex
         )
     except Exception as e:
         logger.warning("LLM analysis failed, using fallback: %s", e)
-        return _fallback_response(user_message, parsed, risk_factors)
+        return _fallback_response(user_message, parsed, risk_factors, sex)
+
+
+def normalise_sex(value: str | None) -> str | None:
+    """Return "male" or "female", or None when unknown or anything else."""
+    cleaned = value.strip().lower() if isinstance(value, str) else None
+    return cleaned if cleaned in ("male", "female") else None
 
 
 async def _llm_analyze(
@@ -70,12 +80,13 @@ async def _llm_analyze(
     conversation_history: list[Message] | None = None,
     parsed: ParsedSymptoms | None = None,
     risk_factors: list[str] | None = None,
+    sex: str | None = None,
 ) -> dict:
     """Generate AI response using LLM (OpenAI/Gemini) with RAG context."""
     from app.core.config import settings
 
     # Step 1: Retrieve relevant medical knowledge via RAG
-    rag_context = build_rag_context(user_message, top_k=3)
+    rag_context = build_rag_context(user_message, top_k=3, sex=sex)
     if rag_context:
         logger.info("RAG context injected into LLM prompt")
 
@@ -107,7 +118,7 @@ async def _llm_analyze(
         logger.info("No LLM API key configured, using rule-based fallback")
         # Forward parsed symptoms and risk factors; dropping them here silently
         # disabled demographic escalation for every offline deployment.
-        return _fallback_response(user_message, parsed, risk_factors)
+        return _fallback_response(user_message, parsed, risk_factors, sex)
 
 
 async def _call_openai(messages: list[dict], settings) -> dict:
@@ -193,6 +204,7 @@ def _fallback_response(
     user_message: str,
     parsed: ParsedSymptoms | None = None,
     risk_factors: list[str] | None = None,
+    sex: str | None = None,
 ) -> dict:
     """Rule-based fallback with RAG-enhanced knowledge and multi-symptom scoring."""
     from app.rag.retriever import retrieve
@@ -203,7 +215,7 @@ def _fallback_response(
     message_lower = user_message.lower()
 
     # Try RAG retrieval first for evidence-based response
-    rag_results = retrieve(user_message, top_k=3, threshold=0.08)
+    rag_results = retrieve(user_message, top_k=3, threshold=0.08, sex=sex)
 
     if rag_results:
         top_match = rag_results[0]

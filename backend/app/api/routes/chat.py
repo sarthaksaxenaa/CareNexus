@@ -77,7 +77,8 @@ async def send_message(
         clean_message,
         history,
         patient_age=profile.age if profile else None,
-        patient_gender=profile.gender if profile else None,
+        # The account's sex; profiles from before it existed may hold one too.
+        patient_gender=current_user.sex or (profile.gender if profile else None),
         known_conditions=profile.known_conditions if profile else None,
     )
 

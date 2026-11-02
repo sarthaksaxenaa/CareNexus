@@ -34,6 +34,9 @@ class MedicalCondition:
         when_to_seek_help: Guidance on when professional care is needed.
         first_aid: Immediate self-care steps.
         description: Brief clinical description for LLM context.
+        sex: "female" or "male" when the condition can only affect that sex;
+            None when it can affect anyone. Retrieval drops a condition
+            whose sex differs from the patient's.
     """
 
     id: str
@@ -47,6 +50,7 @@ class MedicalCondition:
     first_aid: str = ""
     description: str = ""
     icd_code: str = ""
+    sex: str | None = None
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

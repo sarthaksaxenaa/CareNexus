@@ -142,6 +142,7 @@ _BODY_PARTS = frozenset(
         "forehead",
         "jaw",
         "pelvis",
+        "breast",
         "thigh",
         "calf",
         "shin",

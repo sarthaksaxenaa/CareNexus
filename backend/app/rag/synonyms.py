@@ -27,6 +27,8 @@ SYNONYM_GROUPS: tuple[tuple[str, ...], ...] = (
     ),
     ("backache", "back pain", "back ache", "lumbar pain"),
     ("chest pain", "chest tightness", "chest pressure", "chest discomfort"),
+    ("pelvis", "pelvic"),
+    ("breast", "breasts", "mastalgia"),
     ("sore throat", "throat pain", "throat hurts", "pharyngitis"),
     ("earache", "ear pain", "ear ache", "otalgia"),
     ("toothache", "tooth pain", "tooth ache", "dental pain"),

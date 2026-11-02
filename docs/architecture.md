@@ -17,7 +17,7 @@ Two applications and one database:
    │                                                       │                 │
    ▼                                                       ▼                 ▼
  SQLAlchemy 2 (async) ── SQLite file / PostgreSQL      emergency rules   TF-IDF index over
-   users, health_profiles, chat_sessions, messages      symptom parser    49 conditions
+   users, health_profiles, chat_sessions, messages      symptom parser    50 conditions
    foreign keys + ON DELETE CASCADE enforced            optional Gemini   (in memory)
 ```
 

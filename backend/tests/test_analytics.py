@@ -121,6 +121,6 @@ async def test_rag_index_reports_the_library(client: AsyncClient):
     data = (await client.get("/api/v1/analytics/rag-index", headers=headers)).json()[
         "data"
     ]
-    assert data["indexed_conditions"] == 49
+    assert data["indexed_conditions"] == 50
     assert len(data["categories"]) == 11
     assert data["vocabulary_size"] > 0

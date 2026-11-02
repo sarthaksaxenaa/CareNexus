@@ -39,6 +39,11 @@ const attr = (xml, name) => {
 };
 
 // ── Collect ──────────────────────────────────────────────────────────────────
+// The library is counted from the knowledge base itself, never typed in.
+const kb = ["backend/app/rag/knowledge_base.py", "backend/app/rag/knowledge_base_extended.py"].map(read).join("\n");
+const conditionCount = (kb.match(/MedicalCondition\(\s*id="/g) ?? []).length || null;
+const specialtyCount = new Set([...kb.matchAll(/MedicalCondition\(\s*id="[^"]+",\s*name="[^"]+",\s*category="([^"]+)"/g)].map((m) => m[1])).size || null;
+
 const junit = read("backend/test-report.xml");
 let backend = junit ? { tests: attr(junit, "tests"), failed: (attr(junit, "failures") ?? 0) + (attr(junit, "errors") ?? 0) } : null;
 
@@ -86,7 +91,8 @@ const measured = {
   tests: { total: totalTests, failing, backend: backend?.tests ?? null, unit: unit?.tests ?? null, e2e: e2e?.tests ?? null },
   coverage: lineRate,
   retrieval,
-  conditions: 49,
+  conditions: conditionCount,
+  specialties: specialtyCount,
   vulnerabilities: vulns,
 };
 // The date means "figures last changed": unchanged figures keep the previous
@@ -112,7 +118,7 @@ const cols = [
     sub: retrieval ? `${pct(retrieval.heldout.top1, 0)} on unseen queries` : "",
     bars: retrieval ? [["labelled", retrieval.labelled.top1], ["unseen", retrieval.heldout.top1]] : null,
   },
-  { value: "49", label: "ICD-10-coded conditions", sub: "in 11 specialties" },
+  { value: num(conditionCount), label: "ICD-10-coded conditions", sub: specialtyCount ? `in ${specialtyCount} specialties` : "" },
   { value: vulns == null ? "–" : String(vulns), label: "known vulnerabilities", sub: "shipped deps · pip-audit, npm audit" },
 ];
 

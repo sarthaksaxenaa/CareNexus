@@ -9,7 +9,7 @@ const STEPS = [
   },
   {
     title: "Assess",
-    body: "Your words are matched against 49 conditions and the emergency warning signs.",
+    body: "Your words are matched against 50 conditions and the emergency warning signs.",
   },
   {
     title: "Act",

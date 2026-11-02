@@ -31,7 +31,7 @@ CareNexus is a **triage** assistant. It does not name your illness; it answers t
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/features-dark.svg">
-  <img src="docs/assets/features-light.svg" alt="Four principles. Emergencies first: six emergency categories checked before anything else. Grounded answers: a library of 49 ICD-10 conditions searched with TF-IDF. No AI key needed: runs fully offline. Tested like production: unit, API, browser and PostgreSQL suites on every push." width="100%">
+  <img src="docs/assets/features-light.svg" alt="Four principles. Emergencies first: six emergency categories checked before anything else. Grounded answers: a library of 50 ICD-10 conditions searched with TF-IDF. No AI key needed: runs fully offline. Tested like production: unit, API, browser and PostgreSQL suites on every push." width="100%">
 </picture>
 
 <picture>
@@ -147,7 +147,7 @@ flowchart LR
     R -- match --> RED([🔴 Emergency])
     R -- no match --> P[Parse<br/><sub>body parts, duration,<br/>severity words</sub>]
     P --> F[Profile risk<br/><sub>age, sex,<br/>known conditions</sub>]
-    F --> Q[Retrieve<br/><sub>top 3 of 49<br/>conditions</sub>]
+    F --> Q[Retrieve<br/><sub>top 3 of 50<br/>conditions</sub>]
     Q --> G{Gemini<br/>key?}
     G -- yes --> L[LLM answer<br/>grounded in matches]
     G -- no / error --> O[Offline rules<br/>answer]
@@ -195,7 +195,7 @@ flowchart TB
         RT[Routes<br/>auth, chat, health-profile, analytics]
         SV[Services]
         TE[Triage engine<br/>emergency rules, parser]
-        RAG[Retriever<br/>TF-IDF over 49 conditions]
+        RAG[Retriever<br/>TF-IDF over 50 conditions]
         LLM[Gemini<br/>optional]
     end
     DB[(Neon PostgreSQL<br/>SQLite locally)]
@@ -280,7 +280,7 @@ CareNexus/
 │   │   ├── api/routes/        auth, chat, health_profile, analytics
 │   │   ├── core/              config, database, middleware, rate limiter, sanitiser
 │   │   │   └── triage/        engine, emergency rules, symptom parser, prompts
-│   │   ├── rag/               knowledge base (49 conditions), vectoriser, synonyms, retriever
+│   │   ├── rag/               knowledge base (50 conditions), vectoriser, synonyms, retriever
 │   │   ├── models/ schemas/   SQLAlchemy models, Pydantic schemas
 │   │   └── services/          auth, chat, profile, analytics, LLM
 │   ├── scripts/               eval_retrieval.py

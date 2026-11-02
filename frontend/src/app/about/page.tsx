@@ -19,7 +19,7 @@ const PIPELINE = [
   },
   {
     title: "Find the closest conditions",
-    body: "A search over 49 conditions in 11 specialties, each tagged with its ICD-10 code, picks the three best matches.",
+    body: "A search over 50 conditions in 11 specialties, each tagged with its ICD-10 code, picks the three best matches.",
   },
   {
     title: "Write the answer",

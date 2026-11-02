@@ -398,6 +398,7 @@ WOMENS_HEALTH_CONDITIONS: tuple[MedicalCondition, ...] = (
         ),
         description="Painful menstrual periods caused by uterine contractions. Very common and usually manageable.",
         icd_code="N94.6",
+        sex="female",
     ),
     MedicalCondition(
         id="wh-pcos",
@@ -439,6 +440,52 @@ WOMENS_HEALTH_CONDITIONS: tuple[MedicalCondition, ...] = (
         ),
         description="Hormonal disorder causing enlarged ovaries with small cysts. Affects 1 in 10 women.",
         icd_code="E28.2",
+        sex="female",
+    ),
+    MedicalCondition(
+        id="wh-mastalgia",
+        name="Breast Pain (Mastalgia)",
+        category="womens_health",
+        aliases=(
+            "breast pain",
+            "breast tenderness",
+            "sore breasts",
+            "mastalgia",
+            "mastodynia",
+        ),
+        symptoms=(
+            "breast pain",
+            "breast tenderness",
+            "breast swelling",
+            "heaviness in the breast",
+            "pain in one or both breasts",
+            "pain that comes and goes with the menstrual cycle",
+            "pain spreading to the armpit",
+        ),
+        severity="mild",
+        red_flags=(
+            "a new lump or thickening in the breast or armpit",
+            "nipple discharge, especially if bloody",
+            "skin dimpling, puckering or a nipple turning inward",
+            "redness, warmth and fever (possible infection)",
+            "pain in one spot that does not go away after a period",
+        ),
+        when_to_seek_help=(
+            "See a doctor if you find a lump, notice nipple discharge or skin "
+            "changes, have redness with fever, or if pain is in one spot and "
+            "persists beyond one menstrual cycle."
+        ),
+        first_aid=(
+            "Wear a well-fitting supportive bra, including at night if it helps. "
+            "Paracetamol or ibuprofen can ease pain. Warm or cold compresses may "
+            "help. Note when pain occurs in your cycle to share with a doctor."
+        ),
+        description=(
+            "Breast pain, often cyclical and linked to hormonal changes before a "
+            "period. Usually benign, but new lumps or skin changes need checking."
+        ),
+        icd_code="N64.4",
+        sex="female",
     ),
 )
 
