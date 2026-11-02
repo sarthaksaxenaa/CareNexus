@@ -7,28 +7,40 @@ Provides:
     - Rate limiter reset between tests to avoid cross-test 429s
 """
 
+import os
 import uuid
 from collections.abc import AsyncGenerator
 
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import NullPool
 
-from app.core.database import Base, enable_sqlite_foreign_keys, get_db
+from app.core.database import Base, enable_sqlite_foreign_keys, get_db, to_async_url
 from app.core.rate_limiter import get_rate_limiter
 from app.main import app
 
-# ─── In-memory SQLite engine for test isolation ───────────────────────────────
+# ─── Test database: in-memory SQLite, or PostgreSQL when TEST_DATABASE_URL is set ──
 
-TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+TEST_DATABASE_URL = to_async_url(
+    os.environ.get("TEST_DATABASE_URL") or "sqlite+aiosqlite:///:memory:"
+)
+IS_SQLITE = TEST_DATABASE_URL.startswith("sqlite")
 
 test_engine = create_async_engine(
     TEST_DATABASE_URL,
     echo=False,
-    connect_args={"check_same_thread": False},
+    # asyncpg connections are bound to the loop that opened them, and each test
+    # runs on its own loop, so do not pool connections on PostgreSQL.
+    **(
+        {"connect_args": {"check_same_thread": False}}
+        if IS_SQLITE
+        else {"poolclass": NullPool}
+    ),
 )
 
-enable_sqlite_foreign_keys(test_engine)
+if IS_SQLITE:
+    enable_sqlite_foreign_keys(test_engine)
 
 TestSessionFactory = async_sessionmaker(
     test_engine, class_=AsyncSession, expire_on_commit=False
@@ -42,6 +54,7 @@ TestSessionFactory = async_sessionmaker(
 async def _setup_test_db():
     """Create all tables once per test session, then tear down."""
     async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)  # clean slate on a shared server
         await conn.run_sync(Base.metadata.create_all)
     yield
     async with test_engine.begin() as conn:
