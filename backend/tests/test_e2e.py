@@ -523,9 +523,9 @@ class TestSecurity:
                 "/api/v1/chat/message",
                 json={"message": f"Symptom check {i}: mild headache"},
             )
-            assert resp.status_code == 200, (
-                f"Request {i + 1} failed: {resp.status_code}"
-            )
+            assert (
+                resp.status_code == 200
+            ), f"Request {i + 1} failed: {resp.status_code}"
 
         # 11th should be rate limited
         resp = await auth_client.post(
@@ -546,9 +546,9 @@ class TestSecurity:
                 json={"email": f"ratelimit{i}@test.com", "password": "Password#123"},
             )
             # 401 (no such user) is expected, not 429
-            assert resp.status_code == 401, (
-                f"Request {i + 1} unexpected: {resp.status_code}"
-            )
+            assert (
+                resp.status_code == 401
+            ), f"Request {i + 1} unexpected: {resp.status_code}"
 
         # 6th should be rate limited
         resp = await client.post(
