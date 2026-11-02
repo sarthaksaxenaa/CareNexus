@@ -1,9 +1,11 @@
 name: README Assets
 
-# Regenerates the README's banner, stats card, screenshots and demo GIF from
-# the real project, and commits them when they change.
+# Regenerates the README's artwork from the real project, in dark and light
+# versions, and commits it only when something actually changed.
 #
-# - stats card: weekly, on every push to main, or on demand
+# - banner, panels, stats card: weekly, on every push to main, or on demand
+# - production status: probed every run; rewritten when its state changes or weekly
+# - commit activity: weekly or on demand (it changes with every commit)
 # - screenshots + GIF: when the interface or triage code changes, or on demand
 on:
   push:
@@ -75,7 +77,7 @@ jobs:
 
       - name: Install
         run: |
-          pip install -r backend/requirements.txt -r backend/requirements-dev.txt pip-audit --only-binary :all:
+          pip install -r backend/requirements.txt -r backend/requirements-dev.txt pip-audit fonttools brotli --only-binary :all:
           cd frontend && npm ci
 
       # ── Measurements (each step writes the report stats.mjs reads) ──────────
@@ -111,11 +113,25 @@ jobs:
         run: npx playwright test --reporter=json > e2e-report.json
 
       # ── Artwork ──────────────────────────────────────────────────────────────
-      - name: Banner and stats card
+      - name: Banner, stats and panels
         working-directory: ./frontend
+        env:
+          PYTHON: python # fontTools subsets the embedded fonts
         run: |
           node scripts/readme/banner.mjs
           node scripts/readme/stats.mjs
+          node scripts/readme/cards.mjs
+      - name: Production status
+        working-directory: ./frontend
+        env:
+          PYTHON: python
+        run: node scripts/readme/status.mjs
+      - name: Commit activity
+        if: github.event_name != 'push'
+        working-directory: ./frontend
+        env:
+          PYTHON: python
+        run: node scripts/readme/activity.mjs
 
       - name: Screenshots and demo GIF
         if: steps.scope.outputs.shots == 'true'
