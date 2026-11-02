@@ -9,7 +9,7 @@
 //   backend/pip-audit.json      pip-audit -f json
 //   frontend/vitest-report.json vitest --reporter=json
 //   frontend/e2e-report.json    playwright --reporter=json
-//   frontend/npm-audit.json     npm audit --json
+//   frontend/npm-audit.json     npm audit --omit=dev --json
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { ASSETS, C, REPO, esc, fontFaces } from "./theme.mjs";
@@ -95,7 +95,7 @@ const cols = [
     bars: retrieval ? [["labelled", retrieval.labelled.top1], ["unseen", retrieval.heldout.top1]] : null,
   },
   { value: "49", label: "ICD-10-coded conditions", sub: "in 11 specialties" },
-  { value: vulns == null ? "–" : String(vulns), label: "known vulnerabilities", sub: "pip-audit and npm audit" },
+  { value: vulns == null ? "–" : String(vulns), label: "known vulnerabilities", sub: "shipped dependencies, pip-audit and npm audit" },
 ];
 
 const colW = (W - 160) / cols.length;
