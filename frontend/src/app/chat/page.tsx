@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useCallback, useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useRequireSex } from "@/lib/useRequireSex";
@@ -29,6 +29,12 @@ export default function ChatPage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showMap, setShowMap] = useState(false);
+  const mapToggleRef = useRef<HTMLButtonElement>(null);
+  const closeMap = useCallback(() => {
+    setShowMap(false);
+    // Hand focus back to the button that opened it.
+    requestAnimationFrame(() => mapToggleRef.current?.focus());
+  }, []);
   const [selectedRegion, setSelectedRegion] = useState<RegionId | null>(null);
 
   const [sex, setSex] = useState<Sex | null>(null);
@@ -155,6 +161,7 @@ export default function ChatPage() {
             <div className="flex items-center gap-4">
               <span className={`${ALERT_ADVISORY} hidden md:inline`}>Guidance, not a diagnosis</span>
               <button
+                ref={mapToggleRef}
                 type="button"
                 onClick={() => setShowMap((open) => !open)}
                 aria-pressed={showMap}
@@ -297,11 +304,21 @@ export default function ChatPage() {
 
         {/* Body map: overlay on small screens, docked panel on large ones */}
         {showMap && (
+          // Phones: the panel overlays the chat; a tap outside it closes it.
+          <button
+            type="button"
+            tabIndex={-1}
+            aria-label="Close body map overlay"
+            onClick={closeMap}
+            className="fixed inset-0 z-30 bg-black/60 backdrop-blur-[2px] lg:hidden"
+          />
+        )}
+        {showMap && (
           <aside
             aria-label="Body map panel"
             className="fixed inset-y-0 right-0 z-40 w-80 border-l border-edge-soft bg-void shadow-2xl shadow-black/70 lg:static lg:z-auto lg:shadow-none"
           >
-            <BodyMapPanel sex={sex} selected={selectedRegion} onSelect={handleRegionSelect} />
+            <BodyMapPanel sex={sex} selected={selectedRegion} onSelect={handleRegionSelect} onClose={closeMap} />
           </aside>
         )}
       </div>
