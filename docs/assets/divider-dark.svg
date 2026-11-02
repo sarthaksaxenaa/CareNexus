@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="48" viewBox="0 0 1280 48" role="img" aria-labelledby="t d">
+<title id="t">Section divider</title>
+<desc id="d">A thin rule with a single heartbeat in the middle.</desc>
+<style>
+
+.serif{font-family:Cormorant,Georgia,serif;font-variant-numeric:lining-nums}
+.sans{font-family:Jost,Helvetica,Arial,sans-serif}
+.track{letter-spacing:.28em;text-transform:uppercase}
+@keyframes draw{from{stroke-dashoffset:200}to{stroke-dashoffset:0}}
+.beat{stroke-dasharray:200;animation:draw 1.6s cubic-bezier(.22,1,.36,1) both}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+<defs><linearGradient id="rule" x1="0" x2="1">
+  <stop offset="0" stop-color="#c7a8f0" stop-opacity="0"/>
+  <stop offset=".5" stop-color="#c7a8f0" stop-opacity=".5"/>
+  <stop offset="1" stop-color="#c7a8f0" stop-opacity="0"/>
+</linearGradient></defs>
+<path d="M120 24 H580 M700 24 H1160" stroke="url(#rule)" stroke-width="1"/>
+<path class="beat" d="M580 24 L618 24 L624 30 L632 6 L640 34 L646 24 L700 24" fill="none" stroke="#c7a8f0" stroke-width="1.6" stroke-linejoin="round" pathLength="200"/>
+</svg>
