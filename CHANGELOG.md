@@ -8,11 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- README redesign: theme-aware animated hero and panels, a production status card probed by CI, a commit activity chart, and a request sequence diagram; fonts subset per image.
 - Live deployment: web app on Vercel, API on Render (Docker, `render.yaml` Blueprint), database on Neon PostgreSQL.
 - CI job that runs the whole backend suite against PostgreSQL 16.
 - One-click launchers: `start.cmd` (Windows, double-click) and `start.sh` (macOS/Linux).
 
 ### Fixed
+- Emergency detection matched exact phrases only, so 29 of 30 everyday wordings were missed ("pain in my chest", "I can’t breathe" with a curly apostrophe, "I blacked out"); messages are now normalised and matched against phrase patterns.
 - Registration and chat failed on PostgreSQL: timezone-aware timestamps were written to `TIMESTAMP` columns (SQLite had accepted them).
 - Managed-Postgres connection strings (`sslmode`, `channel_binding`) are translated for asyncpg.
 - A malformed `DATABASE_URL` no longer prints its value, password included, in the startup error.
