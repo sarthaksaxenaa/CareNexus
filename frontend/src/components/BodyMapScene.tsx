@@ -2,7 +2,8 @@
 
 import { Canvas, type ThreeEvent } from "@react-three/fiber";
 import { OrbitControls, RoundedBox } from "@react-three/drei";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Component, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import RealisticBody from "@/components/RealisticBody";
 import { Vector2 } from "three";
 import { resolveTorsoRegion, type RegionId } from "@/lib/bodyRegions";
 import { bodyShape, smoothProfile, type Profile } from "@/lib/bodyShapes";
@@ -108,6 +109,192 @@ function LatheMesh({ profile, depth = 1, material }: { profile: Profile; depth?:
   );
 }
 
+interface MannequinProps {
+  sex: Sex;
+  selected: RegionId | null;
+  hovered: RegionId | null;
+  onHover: (id: RegionId | null) => void;
+  onSelect: (id: RegionId) => void;
+}
+
+/** The sculpted stand-in, shown while the realistic body loads or if it cannot. */
+function Mannequin({ sex, selected, hovered, onHover, onSelect }: MannequinProps) {
+  const shape = bodyShape(sex);
+  const common = { selected, hovered, onHover, onSelect };
+  const fixed = (id: RegionId) => () => id;
+  const facingBack = (e: ClickEvent) => e.point.z < 0;
+  // On the female body the front of the lower pelvis is its own region.
+  const hipOrPelvis = (e: ClickEvent): RegionId =>
+    sex === "female" && e.point.z > 0.03 && e.point.y > 0.72 ? "pelvis" : "hip";
+
+  // Mirrored limbs: build once per side.
+  const sides = [-1, 1] as const;
+  const upperLen = -shape.upperArm.profile.at(-1)![1];
+  const foreLen = -shape.forearm.profile.at(-1)![1];
+
+  return (
+    <group>
+    {/* Head and neck */}
+    <Part {...common} regions={["head"]} resolve={fixed("head")} position={[0, shape.head.y, 0]}>
+      {(m) => (
+        <mesh scale={shape.head.radii as [number, number, number]}>
+          <sphereGeometry args={[1, 40, 40]} />
+          {m}
+        </mesh>
+      )}
+    </Part>
+    <Part {...common} regions={["neck"]} resolve={fixed("neck")} position={[0, shape.neck.y, 0]}>
+      {(m) => (
+        <mesh>
+          <cylinderGeometry args={[shape.neck.radius, shape.neck.radius * 1.15, shape.neck.height, 24]} />
+          {m}
+        </mesh>
+      )}
+    </Part>
+
+    {/* Torso: one lathe per zone, front/back decided by where it was hit */}
+    <Part
+      {...common}
+      regions={["chest", "back"]}
+      resolve={(e) => resolveTorsoRegion("upper", facingBack(e))}
+      position={[0, 0, 0]}
+    >
+      {(m) => <LatheMesh profile={shape.chest} depth={shape.depth} material={m} />}
+    </Part>
+    <Part
+      {...common}
+      regions={["abdomen", "back"]}
+      resolve={(e) => resolveTorsoRegion("lower", facingBack(e))}
+      position={[0, 0, 0]}
+    >
+      {(m) => <LatheMesh profile={shape.abdomen} depth={shape.depth} material={m} />}
+    </Part>
+    <Part
+      {...common}
+      regions={sex === "female" ? ["hip", "pelvis"] : ["hip"]}
+      resolve={hipOrPelvis}
+      position={[0, 0, 0]}
+    >
+      {(m) => <LatheMesh profile={shape.hips} depth={shape.depth} material={m} />}
+    </Part>
+
+    {/* Breasts (female body only) */}
+    {shape.breast &&
+      sides.map((s) => (
+        <Part
+          key={`breast-${s}`}
+          {...common}
+          regions={["breast"]}
+          resolve={fixed("breast")}
+          position={[shape.breast!.x * s, shape.breast!.y, shape.breast!.z]}
+        >
+          {(m) => (
+            <mesh scale={[1, 0.92, 0.82]}>
+              <sphereGeometry args={[shape.breast!.radius, 32, 32]} />
+              {m}
+            </mesh>
+          )}
+        </Part>
+      ))}
+
+    {/* Arms: hung from the shoulder and tilted out into an A-pose */}
+    {sides.map((s) => (
+      <group key={`arm-${s}`}>
+        <Part {...common} regions={["shoulder"]} resolve={fixed("shoulder")} position={[shape.shoulder.x * s, shape.shoulder.y, 0]}>
+          {(m) => (
+            <mesh>
+              <sphereGeometry args={[shape.shoulder.radius, 28, 28]} />
+              {m}
+            </mesh>
+          )}
+        </Part>
+        <group position={[shape.shoulder.x * s, shape.shoulder.y, 0]} rotation={[0, 0, shape.armSpread * s]}>
+          <Part {...common} regions={["arm"]} resolve={fixed("arm")} position={[0, 0, 0]}>
+            {(m) => <LatheMesh profile={shape.upperArm.profile} material={m} />}
+          </Part>
+          <Part {...common} regions={["arm"]} resolve={fixed("arm")} position={[0, -upperLen, 0]}>
+            {(m) => <LatheMesh profile={shape.forearm.profile} material={m} />}
+          </Part>
+          <Part {...common} regions={["wrist"]} resolve={fixed("wrist")} position={[0, -upperLen - foreLen, 0]}>
+            {(m) => (
+              <mesh>
+                <sphereGeometry args={[shape.forearm.profile.at(-1)![0] * 1.25, 20, 20]} />
+                {m}
+              </mesh>
+            )}
+          </Part>
+          <Part
+            {...common}
+            regions={["hand"]}
+            resolve={fixed("hand")}
+            position={[0, -upperLen - foreLen - shape.hand.radii[1] * 0.85, 0]}
+          >
+            {(m) => (
+              <mesh scale={shape.hand.radii as [number, number, number]}>
+                <sphereGeometry args={[1, 24, 24]} />
+                {m}
+              </mesh>
+            )}
+          </Part>
+        </group>
+      </group>
+    ))}
+
+    {/* Legs */}
+    {sides.map((s) => (
+      <group key={`leg-${s}`}>
+        <Part {...common} regions={["leg"]} resolve={fixed("leg")} position={[shape.legX * s, shape.hipJointY, 0]}>
+          {(m) => <LatheMesh profile={shape.thigh.profile} depth={0.95} material={m} />}
+        </Part>
+        <Part {...common} regions={["knee"]} resolve={fixed("knee")} position={[shape.legX * s, shape.kneeY, 0.008]}>
+          {(m) => (
+            <mesh>
+              {/* Slightly proud of the thigh and shin, or it is buried and can never be clicked. */}
+              <sphereGeometry args={[shape.thigh.profile.at(-1)![0] * 1.08, 24, 24]} />
+              {m}
+            </mesh>
+          )}
+        </Part>
+        <Part {...common} regions={["leg"]} resolve={fixed("leg")} position={[shape.legX * s, shape.kneeY, 0]}>
+          {(m) => <LatheMesh profile={shape.shin.profile} depth={0.95} material={m} />}
+        </Part>
+        <Part {...common} regions={["ankle"]} resolve={fixed("ankle")} position={[shape.legX * s, shape.ankleY, 0]}>
+          {(m) => (
+            <mesh>
+              <sphereGeometry args={[shape.shin.profile.at(-1)![0] * 1.3, 20, 20]} />
+              {m}
+            </mesh>
+          )}
+        </Part>
+        <Part
+          {...common}
+          regions={["foot"]}
+          resolve={fixed("foot")}
+          position={[shape.legX * s * 1.05, shape.ankleY - shape.foot.size[1] / 2 - 0.02, shape.foot.size[2] / 2 - 0.045]}
+        >
+          {(m) => (
+            <RoundedBox args={shape.foot.size as [number, number, number]} radius={0.022} smoothness={3}>
+              {m}
+            </RoundedBox>
+          )}
+        </Part>
+      </group>
+    ))}
+    </group>
+  );
+}
+
+/** Falls back to the mannequin if the model fails to download or parse. */
+class ModelBoundary extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  render() {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
+}
+
 interface BodyMapSceneProps {
   /** Which mannequin to show. */
   sex: Sex;
@@ -148,22 +335,16 @@ export default function BodyMapScene({
     };
   }, [hovered]);
 
-  const common = { selected, hovered, onHover: setHovered, onSelect };
-  const fixed = (id: RegionId) => () => id;
-  const facingBack = (e: ClickEvent) => e.point.z < 0;
-  // On the female body the front of the lower pelvis is its own region.
-  const hipOrPelvis = (e: ClickEvent): RegionId =>
-    sex === "female" && e.point.z > 0.03 && e.point.y > 0.72 ? "pelvis" : "hip";
-
-  // Mirrored limbs: build once per side.
-  const sides = [-1, 1] as const;
-  const upperLen = -shape.upperArm.profile.at(-1)![1];
-  const foreLen = -shape.forearm.profile.at(-1)![1];
   const footBottom = shape.ankleY - shape.foot.size[1] - 0.03;
+  const [realistic, setRealistic] = useState(false);
+  const onReady = useCallback(() => setRealistic(true), []);
+  const shared = { sex, selected, hovered, onHover: setHovered, onSelect };
+  const mannequin = <Mannequin {...shared} />;
 
   return (
     <div
       role="img"
+      data-body={realistic ? "realistic" : "mannequin"}
       aria-label={`Interactive 3D ${sex} body. Click a body part to describe where it hurts. A list view is available for keyboard and screen reader use.`}
       className="h-full w-full"
     >
@@ -184,155 +365,17 @@ export default function BodyMapScene({
         <ambientLight intensity={0.5} />
         <directionalLight position={[2.5, 4.5, 4]} intensity={2.2} color="#f4effa" />
         <directionalLight position={[-3, 2, 2]} intensity={0.6} color="#ddd5e8" />
-        <pointLight position={[-2.5, 1.8, -2]} intensity={30} color="#c7a8f0" />
-        <pointLight position={[2.5, 0.5, -1.5]} intensity={14} color="#6420a8" />
+        {/* Softer rims on the realistic body, or they tint the skin purple. */}
+        <pointLight position={[-2.5, 1.8, -2]} intensity={realistic ? 9 : 30} color="#c7a8f0" />
+        <pointLight position={[2.5, 0.5, -1.5]} intensity={realistic ? 3 : 14} color="#6420a8" />
 
-        {/* Head and neck */}
-        <Part {...common} regions={["head"]} resolve={fixed("head")} position={[0, shape.head.y, 0]}>
-          {(m) => (
-            <mesh scale={shape.head.radii as [number, number, number]}>
-              <sphereGeometry args={[1, 40, 40]} />
-              {m}
-            </mesh>
-          )}
-        </Part>
-        <Part {...common} regions={["neck"]} resolve={fixed("neck")} position={[0, shape.neck.y, 0]}>
-          {(m) => (
-            <mesh>
-              <cylinderGeometry args={[shape.neck.radius, shape.neck.radius * 1.15, shape.neck.height, 24]} />
-              {m}
-            </mesh>
-          )}
-        </Part>
-
-        {/* Torso: one lathe per zone, front/back decided by where it was hit */}
-        <Part
-          {...common}
-          regions={["chest", "back"]}
-          resolve={(e) => resolveTorsoRegion("upper", facingBack(e))}
-          position={[0, 0, 0]}
-        >
-          {(m) => <LatheMesh profile={shape.chest} depth={shape.depth} material={m} />}
-        </Part>
-        <Part
-          {...common}
-          regions={["abdomen", "back"]}
-          resolve={(e) => resolveTorsoRegion("lower", facingBack(e))}
-          position={[0, 0, 0]}
-        >
-          {(m) => <LatheMesh profile={shape.abdomen} depth={shape.depth} material={m} />}
-        </Part>
-        <Part
-          {...common}
-          regions={sex === "female" ? ["hip", "pelvis"] : ["hip"]}
-          resolve={hipOrPelvis}
-          position={[0, 0, 0]}
-        >
-          {(m) => <LatheMesh profile={shape.hips} depth={shape.depth} material={m} />}
-        </Part>
-
-        {/* Breasts (female body only) */}
-        {shape.breast &&
-          sides.map((s) => (
-            <Part
-              key={`breast-${s}`}
-              {...common}
-              regions={["breast"]}
-              resolve={fixed("breast")}
-              position={[shape.breast!.x * s, shape.breast!.y, shape.breast!.z]}
-            >
-              {(m) => (
-                <mesh scale={[1, 0.92, 0.82]}>
-                  <sphereGeometry args={[shape.breast!.radius, 32, 32]} />
-                  {m}
-                </mesh>
-              )}
-            </Part>
-          ))}
-
-        {/* Arms: hung from the shoulder and tilted out into an A-pose */}
-        {sides.map((s) => (
-          <group key={`arm-${s}`}>
-            <Part {...common} regions={["shoulder"]} resolve={fixed("shoulder")} position={[shape.shoulder.x * s, shape.shoulder.y, 0]}>
-              {(m) => (
-                <mesh>
-                  <sphereGeometry args={[shape.shoulder.radius, 28, 28]} />
-                  {m}
-                </mesh>
-              )}
-            </Part>
-            <group position={[shape.shoulder.x * s, shape.shoulder.y, 0]} rotation={[0, 0, shape.armSpread * s]}>
-              <Part {...common} regions={["arm"]} resolve={fixed("arm")} position={[0, 0, 0]}>
-                {(m) => <LatheMesh profile={shape.upperArm.profile} material={m} />}
-              </Part>
-              <Part {...common} regions={["arm"]} resolve={fixed("arm")} position={[0, -upperLen, 0]}>
-                {(m) => <LatheMesh profile={shape.forearm.profile} material={m} />}
-              </Part>
-              <Part {...common} regions={["wrist"]} resolve={fixed("wrist")} position={[0, -upperLen - foreLen, 0]}>
-                {(m) => (
-                  <mesh>
-                    <sphereGeometry args={[shape.forearm.profile.at(-1)![0] * 1.25, 20, 20]} />
-                    {m}
-                  </mesh>
-                )}
-              </Part>
-              <Part
-                {...common}
-                regions={["hand"]}
-                resolve={fixed("hand")}
-                position={[0, -upperLen - foreLen - shape.hand.radii[1] * 0.85, 0]}
-              >
-                {(m) => (
-                  <mesh scale={shape.hand.radii as [number, number, number]}>
-                    <sphereGeometry args={[1, 24, 24]} />
-                    {m}
-                  </mesh>
-                )}
-              </Part>
-            </group>
-          </group>
-        ))}
-
-        {/* Legs */}
-        {sides.map((s) => (
-          <group key={`leg-${s}`}>
-            <Part {...common} regions={["leg"]} resolve={fixed("leg")} position={[shape.legX * s, shape.hipJointY, 0]}>
-              {(m) => <LatheMesh profile={shape.thigh.profile} depth={0.95} material={m} />}
-            </Part>
-            <Part {...common} regions={["knee"]} resolve={fixed("knee")} position={[shape.legX * s, shape.kneeY, 0.008]}>
-              {(m) => (
-                <mesh>
-                  {/* Slightly proud of the thigh and shin, or it is buried and can never be clicked. */}
-                  <sphereGeometry args={[shape.thigh.profile.at(-1)![0] * 1.08, 24, 24]} />
-                  {m}
-                </mesh>
-              )}
-            </Part>
-            <Part {...common} regions={["leg"]} resolve={fixed("leg")} position={[shape.legX * s, shape.kneeY, 0]}>
-              {(m) => <LatheMesh profile={shape.shin.profile} depth={0.95} material={m} />}
-            </Part>
-            <Part {...common} regions={["ankle"]} resolve={fixed("ankle")} position={[shape.legX * s, shape.ankleY, 0]}>
-              {(m) => (
-                <mesh>
-                  <sphereGeometry args={[shape.shin.profile.at(-1)![0] * 1.3, 20, 20]} />
-                  {m}
-                </mesh>
-              )}
-            </Part>
-            <Part
-              {...common}
-              regions={["foot"]}
-              resolve={fixed("foot")}
-              position={[shape.legX * s * 1.05, shape.ankleY - shape.foot.size[1] / 2 - 0.02, shape.foot.size[2] / 2 - 0.045]}
-            >
-              {(m) => (
-                <RoundedBox args={shape.foot.size as [number, number, number]} radius={0.022} smoothness={3}>
-                  {m}
-                </RoundedBox>
-              )}
-            </Part>
-          </group>
-        ))}
+        {/* The realistic body loads in the background; until then, or if it
+            cannot load, the sculpted mannequin stands in. */}
+        <ModelBoundary key={sex} fallback={mannequin}>
+          <Suspense fallback={mannequin}>
+            <RealisticBody {...shared} floorY={footBottom + 0.012} onReady={onReady} />
+          </Suspense>
+        </ModelBoundary>
 
         {/* Decorative base ring (not interactive) */}
         <mesh rotation-x={-Math.PI / 2} position={[0, footBottom, 0]}>
