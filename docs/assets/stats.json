@@ -1,13 +1,13 @@
 {
-  "updated": "2026-11-02T11:03:54.186Z",
+  "updated": "2026-11-02T17:36:24.574Z",
   "tests": {
-    "total": 421,
+    "total": 426,
     "failing": 0,
-    "backend": 361,
+    "backend": 366,
     "unit": 34,
     "e2e": 26
   },
-  "coverage": 0.9229,
+  "coverage": 0.9238,
   "retrieval": {
     "labelled": {
       "n": 43,
@@ -21,5 +21,5 @@
     }
   },
   "conditions": 49,
-  "vulnerabilities": 16
+  "vulnerabilities": 0
 }
