@@ -128,9 +128,12 @@ export default function BodyMapPanel({ sex, selected, onSelect, onClose }: BodyM
   const body: Sex = sex ?? visitorBody;
 
   // Default to 3D only when it is safe and welcome; otherwise the list.
-  const can3D = supportsWebGL && !contextLost;
+  // A device without WebGL can never show 3D. A lost GPU context only falls
+  // back to the list: choosing 3D again retries, since losses are often
+  // transient (a driver reset, a backgrounded tab).
+  const can3D = supportsWebGL;
   const mode: Mode = chosen ?? (can3D && !reducedMotion ? "3d" : "list");
-  const effective: Mode = mode === "3d" && !can3D ? "list" : mode;
+  const effective: Mode = mode === "3d" && (!can3D || contextLost) ? "list" : mode;
 
   // Move focus into the panel when it opens, so keyboard users land on it.
   useEffect(() => {
@@ -147,6 +150,7 @@ export default function BodyMapPanel({ sex, selected, onSelect, onClose }: BodyM
   }, [onClose]);
 
   const choose = (view: Mode) => {
+    if (view === "3d") setContextLost(false);
     setChosen(view);
     saveView(view);
   };
@@ -248,6 +252,12 @@ export default function BodyMapPanel({ sex, selected, onSelect, onClose }: BodyM
           );
         })}
       </div>
+
+      {contextLost && (
+        <p role="status" className="-mt-2 text-xs font-light text-ink-4">
+          The 3D view stopped, so the list is shown. Choose 3D view to try again.
+        </p>
+      )}
 
       <div id="body-map-view" role="tabpanel" aria-label={effective === "3d" ? "3D view" : "List"} className="min-h-0 flex-1 overflow-hidden rounded-sm border border-edge-soft">
         {effective === "3d" ? (

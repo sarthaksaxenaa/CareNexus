@@ -2,7 +2,7 @@
 
 import { Canvas, type ThreeEvent } from "@react-three/fiber";
 import { OrbitControls, RoundedBox } from "@react-three/drei";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Vector2 } from "three";
 import { resolveTorsoRegion, type RegionId } from "@/lib/bodyRegions";
 import { bodyShape, smoothProfile, type Profile } from "@/lib/bodyShapes";
@@ -129,6 +129,17 @@ export default function BodyMapScene({
   const [hovered, setHovered] = useState<RegionId | null>(null);
   const shape = bodyShape(sex);
 
+  // Unmounting the canvas (switching to the list, closing the panel) makes
+  // three.js release its WebGL context on purpose, which fires the same
+  // "webglcontextlost" event as a GPU crash. Only a loss while mounted is real.
+  const unmounting = useRef(false);
+  useEffect(() => {
+    unmounting.current = false;
+    return () => {
+      unmounting.current = true;
+    };
+  }, []);
+
   // Pointer cursor over a clickable part. Writes to the DOM only; no setState.
   useEffect(() => {
     document.body.style.cursor = hovered ? "pointer" : "auto";
@@ -164,7 +175,7 @@ export default function BodyMapScene({
         onCreated={({ gl }) => {
           gl.domElement.addEventListener("webglcontextlost", (event) => {
             event.preventDefault();
-            onContextLost?.();
+            if (!unmounting.current) onContextLost?.();
           });
         }}
       >

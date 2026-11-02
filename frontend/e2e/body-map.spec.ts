@@ -80,3 +80,45 @@ test("arrow keys move between the two views", async ({ page }) => {
   await view3d.press("ArrowRight");
   await expect(list).toHaveAttribute("aria-selected", "true");
 });
+
+test("switching to the list does not disable 3D: back and forth, with pauses", async ({ page }) => {
+  // Regression: unmounting the 3D canvas releases its WebGL context on purpose,
+  // and that "context lost" event was mistaken for a GPU crash, which greyed
+  // out the 3D view for the rest of the session.
+  await openMap(page);
+  const view3d = panel(page).getByRole("tab", { name: "3D view" });
+  const list = panel(page).getByRole("tab", { name: "List" });
+  test.skip(await view3d.isDisabled(), "this browser has no WebGL");
+  await expect(panel(page).locator("canvas")).toBeVisible();
+
+  for (let round = 0; round < 3; round++) {
+    await list.click();
+    await expect(panel(page).getByRole("list", { name: "Body regions" })).toBeVisible();
+    await page.waitForTimeout(1200); // let the released context's event arrive
+    await expect(view3d).toBeEnabled();
+    await view3d.click();
+    await expect(panel(page).locator("canvas")).toBeVisible();
+    await page.waitForTimeout(600);
+  }
+});
+
+test("a real GPU context loss falls back to the list, and 3D can be retried", async ({ page }) => {
+  await openMap(page);
+  const view3d = panel(page).getByRole("tab", { name: "3D view" });
+  test.skip(await view3d.isDisabled(), "this browser has no WebGL");
+  const canvas = panel(page).locator("canvas");
+  await expect(canvas).toBeVisible();
+
+  // Simulate the GPU dropping the context while the 3D view is on screen.
+  await canvas.evaluate((el) => {
+    const gl = (el as HTMLCanvasElement).getContext("webgl2") ?? (el as HTMLCanvasElement).getContext("webgl");
+    gl?.getExtension("WEBGL_lose_context")?.loseContext();
+  });
+  await expect(panel(page).getByRole("list", { name: "Body regions" })).toBeVisible();
+  await expect(panel(page).getByRole("status")).toContainText("3D view stopped");
+  await expect(view3d).toBeEnabled();
+
+  await view3d.click();
+  await expect(panel(page).locator("canvas")).toBeVisible();
+  await expect(panel(page).getByRole("status")).toHaveCount(0);
+});
