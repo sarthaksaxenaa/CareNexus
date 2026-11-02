@@ -3,7 +3,7 @@
 import pytest
 
 from app.core.config import Settings
-from app.core.database import to_async_url
+from app.core.database import build_engine, to_async_url
 
 
 @pytest.mark.parametrize(
@@ -55,3 +55,26 @@ def test_default_database_needs_no_server():
 )
 def test_to_async_url_translates_libpq_ssl_options(given, expected):
     assert to_async_url(given) == expected
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [
+        # Pasted with the quotes from a psql snippet: unparseable, and SQLAlchemy's
+        # own error would repeat the whole string, password included.
+        "'postgresql://neondb_owner:s3cr3t-Pa55@ep-x.neon.tech/neondb'",
+        "postgresql://neondb_owner:s3cr3t-Pa55@ep-x.neon.tech:port/neondb",
+        "Paste the connection string here",
+        "",
+    ],
+)
+def test_invalid_database_url_error_never_echoes_the_value(bad):
+    """A mistyped DATABASE_URL must not print its password into the logs."""
+    with pytest.raises(RuntimeError) as excinfo:
+        build_engine(bad)
+    message = str(excinfo.value)
+    assert "DATABASE_URL" in message
+    assert "s3cr3t" not in message
+    assert "connection string here" not in message
+    assert excinfo.value.__cause__ is None  # the original error repeats the URL
+    assert excinfo.value.__suppress_context__

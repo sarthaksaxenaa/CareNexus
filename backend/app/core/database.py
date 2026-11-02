@@ -1,6 +1,7 @@
 """Database engine, session factory, and base model for CareNexus."""
 
 from sqlalchemy import event
+from sqlalchemy.exc import ArgumentError
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -52,18 +53,34 @@ def _asyncpg_query(url: str) -> str:
     return base + ("?" + "&".join(kept) if kept else "")
 
 
-DATABASE_URL = to_async_url(settings.DATABASE_URL)
+def build_engine(url: str) -> AsyncEngine:
+    """Create the async engine for a plain or driver-qualified database URL.
 
-# SQLite doesn't support pool_pre_ping
-_is_sqlite = DATABASE_URL.startswith("sqlite")
+    A malformed URL fails with a message that names the setting but never
+    repeats its value: SQLAlchemy's own error echoes the whole string, which
+    for a mistyped connection string means the password ends up in the logs.
+    """
+    async_url = to_async_url(url)
+    is_sqlite = async_url.startswith("sqlite")
+    try:
+        return create_async_engine(
+            async_url,
+            echo=settings.DEBUG,
+            # SQLite has no server connection to ping.
+            pool_pre_ping=not is_sqlite,
+            # SQLite needs this for async writes.
+            **({"connect_args": {"check_same_thread": False}} if is_sqlite else {}),
+        )
+    except (ArgumentError, ValueError):
+        raise RuntimeError(
+            "DATABASE_URL is not a valid database URL (value hidden). Expected "
+            "postgresql://user:password@host/db or sqlite:///path, with no "
+            "quotes or extra text around it."
+        ) from None
 
-engine = create_async_engine(
-    DATABASE_URL,
-    echo=settings.DEBUG,
-    pool_pre_ping=not _is_sqlite,
-    # SQLite needs this for async writes
-    **({} if not _is_sqlite else {"connect_args": {"check_same_thread": False}}),
-)
+
+engine = build_engine(settings.DATABASE_URL)
+DATABASE_URL = engine.url.render_as_string(hide_password=True)
 
 
 def enable_sqlite_foreign_keys(async_engine: AsyncEngine) -> None:
