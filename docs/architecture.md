@@ -77,11 +77,21 @@ Timestamps are stored as naive UTC and serialised with an explicit offset. Table
 
 All settings come from environment variables (`backend/.env`), with safe defaults for local use: SQLite, no LLM, development secret. With `ENVIRONMENT=production` the app refuses to start unless `SECRET_KEY` is set to a unique 32+ character value. `TRUST_PROXY_HEADERS` must only be enabled behind a reverse proxy that sets `X-Forwarded-For`.
 
+## Deployment
+
+| Part | Host | Notes |
+|---|---|---|
+| Web app | Vercel | root directory `frontend`; `NEXT_PUBLIC_API_URL` is inlined at build time |
+| API | Render, free web service | `render.yaml` Blueprint, Docker, health check `/health`, listens on `$PORT` |
+| Database | Neon PostgreSQL | direct (unpooled) connection; `sslmode` is rewritten to asyncpg's `ssl` |
+
+Pushes to `main` redeploy both apps. In production the API requires a generated `SECRET_KEY`, trusts `X-Forwarded-For` from Render's proxy (`TRUST_PROXY_HEADERS`), and accepts browser requests only from the Vercel origin (`ALLOWED_ORIGINS`). The free API instance sleeps after about 15 minutes idle, so the first request afterwards is slow.
+
 ## Testing and delivery
 
 | Layer | Tooling | Scope |
 |---|---|---|
-| Backend | pytest (async), in-memory SQLite | units, API contracts, security, edge cases, DB integrity, retrieval quality |
+| Backend | pytest (async), in-memory SQLite and PostgreSQL 16 in CI | units, API contracts, security, edge cases, DB integrity, retrieval quality |
 | Frontend | Vitest | API client (refresh, errors), time parsing, body-map logic |
 | End to end | Playwright | production build + real API + SQLite in Chromium |
 

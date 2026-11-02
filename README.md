@@ -12,7 +12,11 @@
 
 **Describe what you feel. CareNexus tells you how urgently to get care, and what to do in the meantime.**
 
-[Quick start](#quick-start) · [How it decides](#how-a-message-is-assessed) · [Architecture](#architecture) · [Quality](#quality) · [API](#api)
+### [Try it live → care-nexus-ochre.vercel.app](https://care-nexus-ochre.vercel.app)
+
+<sub>The API runs on a free instance that sleeps when idle; the first request after a quiet spell can take up to a minute.</sub>
+
+[Live demo](https://care-nexus-ochre.vercel.app) · [Quick start](#quick-start) · [How it decides](#how-a-message-is-assessed) · [Architecture](#architecture) · [Quality](#quality) · [API](#api)
 
 </div>
 
@@ -73,6 +77,24 @@ Then start it with one action:
 `run.py` creates the Python environment, installs dependencies whenever `requirements.txt` or `package-lock.json` changes, starts both servers and opens **http://localhost:3000**. API docs are at **http://localhost:8000/docs**.
 
 No configuration is needed. For Gemini answers, copy `backend/.env.example` to `backend/.env` and set `GEMINI_API_KEY`. With Docker: `docker compose up --build`.
+
+## Deployment
+
+| Part | Host | URL |
+|---|---|---|
+| Web app (Next.js) | **Vercel** | [care-nexus-ochre.vercel.app](https://care-nexus-ochre.vercel.app) |
+| API (FastAPI, Docker) | **Render** | [carenexus-api.onrender.com/docs](https://carenexus-api.onrender.com/docs) |
+| Database | **Neon** (serverless PostgreSQL) | private |
+
+Every push to `main` redeploys both apps. The API is described as code in [`render.yaml`](render.yaml) (a Render **Blueprint**): it builds `backend/Dockerfile`, checks `/health`, generates its own `SECRET_KEY` and refuses to start in production without one. Secrets never live in git; the two values a host needs are:
+
+| Variable | Where | Value |
+|---|---|---|
+| `DATABASE_URL` | Render | Neon connection string, **direct** (not pooled) |
+| `ALLOWED_ORIGINS` | Render | `["https://care-nexus-ochre.vercel.app"]` |
+| `NEXT_PUBLIC_API_URL` | Vercel | `https://carenexus-api.onrender.com` (read at build time) |
+
+The whole backend test suite also runs against PostgreSQL in CI, so what passes there is what runs in production.
 
 ## How a message is assessed
 
