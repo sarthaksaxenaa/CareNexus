@@ -1,36 +1,27 @@
-<div align="center">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/banner-dark.svg">
+  <img src="docs/assets/banner-light.svg" alt="CareNexus: a clearer kind of care. Three real assessments play in turn: a mild headache graded self-care, burning urination with fever graded see a doctor, crushing chest pain graded emergency." width="100%">
+</picture>
 
-<img src="docs/assets/banner.svg" alt="CareNexus: a clearer kind of care. Self-care, see a doctor, emergency." width="100%">
+<div align="center">
 
 [![CI](https://github.com/sarthaksaxenaa/CareNexus/actions/workflows/ci.yml/badge.svg)](https://github.com/sarthaksaxenaa/CareNexus/actions/workflows/ci.yml)
 [![README assets](https://github.com/sarthaksaxenaa/CareNexus/actions/workflows/readme-assets.yml/badge.svg)](https://github.com/sarthaksaxenaa/CareNexus/actions/workflows/readme-assets.yml)
-![Python](https://img.shields.io/badge/Python-3.12-3b0a6b?logo=python&logoColor=c7a8f0&labelColor=050505)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.143-3b0a6b?logo=fastapi&logoColor=c7a8f0&labelColor=050505)
-![Next.js](https://img.shields.io/badge/Next.js-16-3b0a6b?logo=nextdotjs&logoColor=c7a8f0&labelColor=050505)
-![three.js](https://img.shields.io/badge/three.js-3D-3b0a6b?logo=threedotjs&logoColor=c7a8f0&labelColor=050505)
-[![License: MIT](https://img.shields.io/badge/License-MIT-3b0a6b?labelColor=050505)](LICENSE)
-
-**Describe what you feel. CareNexus tells you how urgently to get care, and what to do in the meantime.**
+[![Live](https://img.shields.io/website?url=https%3A%2F%2Fcarenexus-health.vercel.app&label=live&up_message=online&up_color=3b0a6b&labelColor=050505)](https://carenexus-health.vercel.app)
+[![Last commit](https://img.shields.io/github/last-commit/sarthaksaxenaa/CareNexus?color=3b0a6b&labelColor=050505)](https://github.com/sarthaksaxenaa/CareNexus/commits/main)
+[![License: MIT](https://img.shields.io/badge/license-MIT-3b0a6b?labelColor=050505)](LICENSE)
 
 ### [Try it live → carenexus-health.vercel.app](https://carenexus-health.vercel.app)
 
-<sub>The API runs on a free instance that sleeps when idle; the first request after a quiet spell can take up to a minute.</sub>
+<sub>Create an account in seconds; no AI key needed, the engine runs on its own. The API sleeps when idle, so the very first request can take up to a minute.</sub>
 
-[Live demo](https://carenexus-health.vercel.app) · [Quick start](#quick-start) · [How it decides](#how-a-message-is-assessed) · [Architecture](#architecture) · [Quality](#quality) · [API](#api)
+[What it does](#what-it-does) · [See it](#see-it) · [Run it](#run-it) · [Production](#production) · [Quality](#quality) · [How it decides](#how-a-message-is-assessed) · [Architecture](#architecture) · [Engineering](#engineering)
 
 </div>
 
-<br>
-
-<p align="center">
-  <img src="docs/assets/demo.gif" alt="Demo: a fever check graded 'see a doctor', a stroke description graded 'emergency', the 3D body map, and the dashboard" width="900">
-</p>
-
-<p align="center"><img src="docs/assets/stats.svg" alt="Measured by CI: tests passing, backend coverage, retrieval accuracy, conditions in the library, known vulnerabilities" width="100%"></p>
-
 ## What it does
 
-CareNexus is a **triage** assistant. It does not name your illness; it answers the question that matters first:
+CareNexus is a **triage** assistant. It does not name your illness; it answers the question that matters first: *how urgently should I get care?*
 
 | Level | Meaning |
 |:--|:--|
@@ -38,7 +29,21 @@ CareNexus is a **triage** assistant. It does not name your illness; it answers t
 | 🟠 **See a doctor** | Book an appointment soon; it should be examined in person |
 | 🔴 **Emergency** | Get help now: call your local emergency number |
 
-It works **fully offline**. Emergency rules and a search over a curated library of **49 ICD-10-coded conditions** answer every message; a Gemini API key is optional and, when set, writes the reply from the same retrieved knowledge.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/features-dark.svg">
+  <img src="docs/assets/features-light.svg" alt="Four principles. Emergencies first: six emergency categories checked before anything else. Grounded answers: a library of 49 ICD-10 conditions searched with TF-IDF. No AI key needed: runs fully offline. Tested like production: unit, API, browser and PostgreSQL suites on every push." width="100%">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/divider-dark.svg">
+  <img src="docs/assets/divider-light.svg" alt="" width="100%">
+</picture>
+
+## See it
+
+<p align="center">
+  <img src="docs/assets/demo.gif" alt="Demo: a fever check graded 'see a doctor', a stroke description graded 'emergency', the 3D body map, and the dashboard" width="900">
+</p>
 
 <table>
   <tr>
@@ -57,7 +62,7 @@ It works **fully offline**. Emergency rules and a search over a curated library 
   <img src="docs/assets/screenshots/mobile-chat.png" alt="Chat on a phone" width="260">
 </p>
 
-## Quick start
+## Run it
 
 Requires **Python 3.12+** and **Node.js 20+**.
 
@@ -66,40 +71,76 @@ git clone https://github.com/sarthaksaxenaa/CareNexus.git
 cd CareNexus
 ```
 
-Then start it with one action:
-
 | Platform | Start |
 |---|---|
-| Windows | double-click **`start.cmd`** (or right-click `start.ps1` > Run with PowerShell) |
+| Windows | double-click **`start.cmd`** |
 | macOS / Linux | `./start.sh` |
-| Any | `python run.py` |
+| Anywhere | `python run.py` &nbsp;·&nbsp; or `docker compose up --build` |
 
-`run.py` creates the Python environment, installs dependencies whenever `requirements.txt` or `package-lock.json` changes, starts both servers and opens **http://localhost:3000**. API docs are at **http://localhost:8000/docs**.
+`run.py` creates the Python environment, installs dependencies only when `requirements.txt` or `package-lock.json` changed (it hashes them), starts both servers and opens **http://localhost:3000**. API docs are at **http://localhost:8000/docs**. No configuration needed; for Gemini-written answers, set `GEMINI_API_KEY` in `backend/.env`.
 
-No configuration is needed. For Gemini answers, copy `backend/.env.example` to `backend/.env` and set `GEMINI_API_KEY`. With Docker: `docker compose up --build`.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/divider-dark.svg">
+  <img src="docs/assets/divider-light.svg" alt="" width="100%">
+</picture>
 
-## Deployment
+## Production
 
-| Part | Host | URL |
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/status-dark.svg">
+  <img src="docs/assets/status-light.svg" alt="Production status as probed by CI: API health and latency, CORS preflight from the web origin, and the web app." width="100%">
+</picture>
+
+<sub>Probed from GitHub Actions: 15 timed calls to the live API, a real CORS preflight from the web origin, and a fetch of the web app. The card is redrawn when the result changes, and at least weekly.</sub>
+
+| Part | Host | Address |
 |---|---|---|
 | Web app (Next.js) | **Vercel** | [carenexus-health.vercel.app](https://carenexus-health.vercel.app) |
-| API (FastAPI, Docker) | **Render** | [carenexus-api.onrender.com/docs](https://carenexus-api.onrender.com/docs) |
+| API (FastAPI in Docker) | **Render** | [carenexus-api.onrender.com/docs](https://carenexus-api.onrender.com/docs) |
 | Database | **Neon** (serverless PostgreSQL) | private |
 
-Every push to `main` redeploys both apps. The API is described as code in [`render.yaml`](render.yaml) (a Render **Blueprint**): it builds `backend/Dockerfile`, checks `/health`, generates its own `SECRET_KEY` and refuses to start in production without one. Secrets never live in git; the two values a host needs are:
+Pushes to `main` redeploy the web app, and the API when backend code changed. The API is infrastructure as code in [`render.yaml`](render.yaml) (a Render **Blueprint**): Docker build, `/health` check, a generated `SECRET_KEY`, and a refusal to start in production without one.
+
+<details>
+<summary><b>Configuration the hosts need</b></summary>
+
+Secrets never live in git.
 
 | Variable | Where | Value |
 |---|---|---|
-| `DATABASE_URL` | Render | Neon connection string, **direct** (not pooled) |
+| `DATABASE_URL` | Render | Neon connection string, **direct** (not pooled); `sslmode` is translated for asyncpg |
 | `ALLOWED_ORIGINS` | Render | `["https://carenexus-health.vercel.app"]` |
-| `NEXT_PUBLIC_API_URL` | Vercel | `https://carenexus-api.onrender.com` (read at build time) |
+| `NEXT_PUBLIC_API_URL` | Vercel | `https://carenexus-api.onrender.com` (inlined at build time) |
 
-The whole backend test suite also runs against PostgreSQL in CI, so what passes there is what runs in production.
+</details>
+
+## Quality
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/stats-dark.svg">
+  <img src="docs/assets/stats-light.svg" alt="Measured by CI: tests passing, backend coverage, retrieval accuracy, conditions in the library, known vulnerabilities" width="100%">
+</picture>
+
+Every figure above is read from a CI report; none is typed by hand.
+
+| Suite | Runs on | What it covers |
+|:--|:--|:--|
+| Backend (pytest) | SQLite **and** PostgreSQL 16 | units, API contracts, security, edge cases, database integrity, retrieval quality, emergency phrasing |
+| Frontend unit (Vitest) | Node | API client refresh and errors, time parsing, body-map logic |
+| End-to-end (Playwright) | Chromium | the production build, the real API and a database |
+
+**Retrieval accuracy** is measured on everyday-language queries, including a held-out set written before any tuning. Fixing the index (it was matching words in treatment advice rather than symptoms) lifted the first-match rate from 62.8% to 86.0%, and from 73.3% to 93.3% on unseen queries. CI fails if it drops.
+
+**Emergency detection** is tested against the way people actually write: *"pain in my chest"*, *"I can’t breathe"* typed with a phone's curly apostrophe, *"I blacked out"*. Thirty such phrasings must reach the right emergency, and nine everyday complaints must not.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/divider-dark.svg">
+  <img src="docs/assets/divider-light.svg" alt="" width="100%">
+</picture>
 
 ## How a message is assessed
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{'background':'#050505','primaryColor':'#140a20','primaryTextColor':'#f4effa','primaryBorderColor':'#6420a8','lineColor':'#c7a8f0','edgeLabelBackground':'#050505','secondaryColor':'#0a090c','tertiaryColor':'#0a090c','fontFamily':'Georgia, serif'}}}%%
 flowchart LR
     M([Message]) --> S[Sanitise<br/><sub>strip HTML, refuse<br/>prompt injection</sub>]
     S --> R{Emergency<br/>rules}
@@ -115,67 +156,82 @@ flowchart LR
 ```
 
 1. **Sanitise.** HTML is stripped; 12 prompt-injection patterns are refused.
-2. **Emergency rules first.** Chest pain, stroke signs, breathing difficulty, unconsciousness, severe bleeding and self-harm are answered immediately.
+2. **Emergency rules first.** The text is normalised (case, apostrophes, punctuation) and matched against phrase patterns for heart, breathing, stroke, crisis, collapse and bleeding. Negation is deliberately ignored: a false alarm is safer than a missed heart attack.
 3. **Parse and personalise.** Duration, severity words and the health profile raise the level of concern.
-4. **Retrieve.** TF-IDF search with field weighting (a condition's name counts more than its description), light stemming and medical synonyms.
+4. **Retrieve.** TF-IDF with field weighting (a condition's name counts more than its description), light stemming and medical synonyms.
 5. **Answer.** Gemini writes the reply from the retrieved conditions, or the offline engine builds it; any LLM failure falls back to offline.
+
+### One request, end to end
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant B as Browser (Vercel)
+    participant A as API (Render)
+    participant E as Triage engine
+    participant D as PostgreSQL (Neon)
+    B->>A: POST /chat/message · Bearer access token
+    A->>A: CORS, request ID, security headers
+    A->>A: verify JWT · rate limit 10/min per user · sanitise
+    A->>D: load or create session, store message
+    A->>E: message + health profile
+    E-->>A: level, answer, sources
+    A->>D: store answer, bump session
+    A-->>B: both messages, UTC timestamps
+    Note over B,A: On 401: one shared token refresh, then replay
+```
 
 ## Architecture
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{'background':'#050505','primaryColor':'#140a20','primaryTextColor':'#f4effa','primaryBorderColor':'#6420a8','lineColor':'#c7a8f0','edgeLabelBackground':'#050505','secondaryColor':'#0a090c','tertiaryColor':'#0a090c','clusterBkg':'#0a090c','clusterBorder':'#3b0a6b','fontFamily':'Georgia, serif'}}}%%
 flowchart TB
-    subgraph Browser["Browser · Next.js 16 · React 19"]
+    subgraph Vercel["Vercel · Next.js 16 · React 19"]
         UI[Pages: home, chat, dashboard, profile]
         BM[3D body map<br/>three.js, lazy-loaded]
         AC[API client<br/>silent token refresh]
     end
-    subgraph API["FastAPI service"]
+    subgraph Render["Render · FastAPI in Docker"]
         MW[Middleware<br/>CORS, request IDs, security headers]
         RT[Routes<br/>auth, chat, health-profile, analytics]
         SV[Services]
-        TE[Triage engine<br/>rules, parser]
+        TE[Triage engine<br/>emergency rules, parser]
         RAG[Retriever<br/>TF-IDF over 49 conditions]
         LLM[Gemini<br/>optional]
     end
-    DB[(SQLite / PostgreSQL<br/>users, profiles, sessions, messages)]
+    DB[(Neon PostgreSQL<br/>SQLite locally)]
     UI --> AC
     UI --> BM
-    AC -- "JSON over HTTP, JWT" --> MW --> RT --> SV
+    AC -- "JSON over HTTPS, JWT" --> MW --> RT --> SV
     SV --> TE --> RAG
     TE -.-> LLM
     SV --> DB
 ```
 
-Routes validate and handle HTTP, services hold the logic, models map tables. More in [docs/architecture.md](docs/architecture.md).
+Routes validate and handle HTTP, services hold the logic, models map tables; routes never touch SQL. More in [docs/architecture.md](docs/architecture.md).
 
-## Quality
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/divider-dark.svg">
+  <img src="docs/assets/divider-light.svg" alt="" width="100%">
+</picture>
 
-Every figure on the stats card above is produced by CI from real reports; nothing is typed by hand.
+## Engineering
 
-| Suite | Tests | What it covers |
-|:--|--:|:--|
-| Backend (pytest) | 361 | units, API contracts, security, edge cases, database integrity, retrieval quality |
-| Frontend unit (Vitest) | 34 | API client refresh and errors, time parsing, body-map logic |
-| End-to-end (Playwright) | 26 | a real browser on the production build, the real API and a database |
-
-**Retrieval accuracy** on everyday-language queries, including every quick-start prompt:
-
-| Query set | Correct first match | Correct in top 3 |
-|:--|--:|--:|
-| Labelled (43) | 86.0% | 100% |
-| Held out, written before tuning (15) | 93.3% | 100% |
-
-Fixing the index (it was matching words in treatment advice rather than symptoms) lifted these from 62.8% and 73.3%. CI fails if they drop.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/activity-dark.svg">
+  <img src="docs/assets/activity-light.svg" alt="Commit activity: commits to main per day, and the share of each Conventional Commit type." width="100%">
+</picture>
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{'background':'#050505','primaryColor':'#140a20','primaryTextColor':'#f4effa','primaryBorderColor':'#6420a8','lineColor':'#c7a8f0','edgeLabelBackground':'#050505','fontFamily':'Georgia, serif'}}}%%
 flowchart LR
-    push([push / PR]) --> BL[Backend lint] --> BT[Backend tests<br/>coverage ≥ 90%<br/>retrieval accuracy]
+    push([push / PR]) --> BL[Backend lint<br/>pinned Ruff]
+    BL --> BT[Tests on SQLite<br/>coverage ≥ 90%<br/>retrieval accuracy]
+    BL --> PG[Tests on<br/>PostgreSQL 16]
     push --> FL[Frontend lint,<br/>types, unit tests]
     push --> AU[Dependency audits<br/>pip-audit, npm audit]
     BT --> E2E[End-to-end<br/>browser + API + DB]
+    PG --> E2E
     FL --> E2E
+    E2E --> DEP([Vercel + Render<br/>deploy from main])
 ```
 
 ### Security
@@ -185,17 +241,16 @@ flowchart LR
 - Rate limits: 5/min per IP for sign-in, 10/min **per user** for chat; proxy headers trusted only when configured
 - Input sanitising, prompt-injection refusal, and HTML escaped again before rendering
 - Foreign keys and cascades enforced by the database, SQLite included
-- The API refuses to start in production with the default secret
-- Dependabot proposes updates after a 14-day cooldown; CI audits every dependency
+- A malformed `DATABASE_URL` fails without echoing its value, so a typo cannot leak the password into logs
+- The API refuses to start in production with the default secret; CORS admits only the web origin
+- Dependabot proposes updates after a 14-day cooldown; CI audits shipped dependencies on every push
 
-**Known limitation:** tokens are kept in `localStorage`, which an XSS flaw could read. A production deployment should move them to `httpOnly` cookies.
-
-## API
-
-Interactive docs: **http://localhost:8000/docs**. All timestamps are UTC with an explicit offset.
+**Known limitation:** tokens are kept in `localStorage`, which an XSS flaw could read; `httpOnly` cookies are the next step.
 
 <details>
-<summary><b>Endpoints</b></summary>
+<summary><b>API endpoints</b></summary>
+
+Interactive docs: [carenexus-api.onrender.com/docs](https://carenexus-api.onrender.com/docs) (or locally at `:8000/docs`). All timestamps are UTC with an explicit offset.
 
 | Method | Endpoint | Description | Auth |
 |:--|:--|:--|:--|
@@ -229,7 +284,8 @@ CareNexus/
 │   │   ├── models/ schemas/   SQLAlchemy models, Pydantic schemas
 │   │   └── services/          auth, chat, profile, analytics, LLM
 │   ├── scripts/               eval_retrieval.py
-│   └── tests/                 pytest suites + labelled retrieval data
+│   ├── tests/                 pytest suites + labelled retrieval data
+│   └── Dockerfile
 ├── frontend/
 │   ├── src/app/               pages
 │   ├── src/components/        navbar, chat sidebar, messages, 3D body map
@@ -238,7 +294,8 @@ CareNexus/
 │   └── scripts/readme/        generators for this README's artwork
 ├── docs/                      architecture.md, generated assets
 ├── .github/workflows/         ci.yml, readme-assets.yml
-└── run.py, start.cmd, start.ps1, start.sh, docker-compose.yml
+├── render.yaml                API deployment (Render Blueprint)
+└── run.py, start.cmd, start.sh, start.ps1, docker-compose.yml
 ```
 
 </details>
@@ -246,28 +303,27 @@ CareNexus/
 <details>
 <summary><b>How this README keeps itself current</b></summary>
 
-The banner, stats card, screenshots and demo GIF are generated, not drawn by hand:
+No image here is drawn by hand. Each is generated by a script from the real project, in a dark and a light version that follow your GitHub theme, and carries its own fonts subset to the glyphs it uses (GitHub's image proxy blocks external fonts; subsetting with fontTools keeps each file small).
 
 | Script | Produces | From |
 |:--|:--|:--|
-| [`banner.mjs`](frontend/scripts/readme/banner.mjs) | animated SVG header | the app's fonts and colours, embedded |
-| [`stats.mjs`](frontend/scripts/readme/stats.mjs) | the stats card | pytest, coverage, Vitest, Playwright, retrieval and audit reports |
+| [`banner.mjs`](frontend/scripts/readme/banner.mjs) | animated header | three real engine outputs, the app's fonts and colours |
+| [`stats.mjs`](frontend/scripts/readme/stats.mjs) | quality card | pytest, coverage, Vitest, Playwright, retrieval and audit reports |
+| [`cards.mjs`](frontend/scripts/readme/cards.mjs) | principles, stack, dividers | `stats.json`, `package.json`, `requirements.txt` |
+| [`status.mjs`](frontend/scripts/readme/status.mjs) | production status | live probes of the deployed API and web app |
+| [`activity.mjs`](frontend/scripts/readme/activity.mjs) | commit activity | `git log`, bots excluded |
 | [`capture.mjs`](frontend/scripts/readme/capture.mjs) | screenshots, demo GIF | Playwright driving the running app, ffmpeg |
 
-[`readme-assets.yml`](.github/workflows/readme-assets.yml) runs them weekly and after relevant changes, and commits the results only when something actually changed.
+[`readme-assets.yml`](.github/workflows/readme-assets.yml) runs them weekly and after relevant pushes, and commits only when something actually changed.
 
 </details>
 
 ## Tech stack
 
-| Layer | Technology |
-|:--|:--|
-| Interface | Next.js 16, React 19, TypeScript, Tailwind CSS 4, three.js with React Three Fiber |
-| Service | FastAPI, SQLAlchemy 2 (async), Pydantic 2, PyJWT, bcrypt |
-| Data | SQLite (default), PostgreSQL (production) |
-| Triage | Rules, TF-IDF retrieval, optional Google Gemini |
-| Quality | pytest, Vitest, Playwright, Ruff, ESLint, pip-audit, npm audit |
-| Delivery | GitHub Actions, Dependabot, Docker |
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/stack-dark.svg">
+  <img src="docs/assets/stack-light.svg" alt="Interface: Next.js, React, Tailwind, three.js, TypeScript. Service: FastAPI, SQLAlchemy, Pydantic, PyJWT, bcrypt. Data and triage: PostgreSQL, SQLite, TF-IDF retrieval, optional Gemini. Quality and delivery: pytest, Vitest, Playwright, GitHub Actions, Vercel, Render, Neon." width="100%">
+</picture>
 
 ## Disclaimer
 
