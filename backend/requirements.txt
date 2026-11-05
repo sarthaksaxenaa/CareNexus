@@ -14,7 +14,7 @@ pydantic-settings==2.5.2
 # only installed automatically on Python < 3.13, so pin it explicitly.
 sqlalchemy==2.0.35
 aiosqlite==0.20.0
-greenlet>=3.1.1
+greenlet>=3.5.6
 asyncpg==0.30.0  # PostgreSQL driver for production (postgresql+asyncpg://)
 
 # ─── Validation ───────────────────────────────
